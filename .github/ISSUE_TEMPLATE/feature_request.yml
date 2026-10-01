@@ -1,0 +1,104 @@
+name: Feature request
+description: Propose an improvement to AXIOS investigation capability.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A good feature improves **evidence quality or investigation capability**, not just the amount of output.
+        Explain the investigation problem before proposing implementation details.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What investigation problem would this improve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: capability
+    attributes:
+      label: Proposed capability
+      description: Describe the outcome you want. Do not include exploitation steps or unsafe automation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence-model
+    attributes:
+      label: Evidence and safety model
+      description: How should AXIOS distinguish observed evidence, unavailable evidence, and an unsupported conclusion?
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version or environment
+    validations:
+      required: false
+
+  - type: dropdown
+    id: context
+    attributes:
+      label: Intended execution context
+      options:
+        - Standard user
+        - Administrator
+        - Either
+    validations:
+      required: false
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Relevant AXIOS mode
+      options:
+        - User
+        - Administrator
+        - System
+        - Network
+        - Persistence
+        - Software
+        - Results
+        - New mode
+        - Not sure
+    validations:
+      required: false
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Example workflow
+      description: Show a concise example of the desired command or result.
+      render: powershell
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What are you doing today without this capability?
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add references, redacted samples, or design notes if useful.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This request does not ask AXIOS to exploit, remediate, or automatically change a system.
+          required: true
+        - label: I have removed sensitive and unrelated machine data.
+          required: true
