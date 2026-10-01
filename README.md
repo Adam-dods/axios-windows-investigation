@@ -22,6 +22,7 @@
 - [What AXIOS is not](#what-axios-is-not)
 - [By the numbers](#by-the-numbers)
 - [Quick start](#quick-start)
+- [Documentation](#documentation)
 - [Investigation philosophy](#investigation-philosophy)
 - [Why Rust](#why-rust)
 - [Architecture](#architecture)
@@ -100,6 +101,16 @@ The first stable release, dated **1 October 2026**, was researched and engineere
 ```
 
 Download `axios-windows-investigation.zip` from **GitHub Releases**, extract it, and run from PowerShell.
+
+---
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [COMMANDS.md](COMMANDS.md) | Complete command guide for every AXIOS mode |
+| [WINDOWS.md](WINDOWS.md) | Windows requirements, privileges, and visibility |
+| [CHANGELOG.md](CHANGELOG.md) | Release history and validation record |
 
 ---
 
