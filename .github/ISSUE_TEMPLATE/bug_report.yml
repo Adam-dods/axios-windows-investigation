@@ -8,7 +8,7 @@ body:
       value: |
         Thank you for helping improve AXIOS.
         Please keep this report focused on **one** problem.
-        **Do not report security vulnerabilities here.** Follow [SECURITY.md](../blob/main/SECURITY.md) and email the report privately instead.
+        **Do not report security vulnerabilities here.** Follow [SECURITY.md](https://github.com/Adam-dods/axios-windows-investigation/blob/main/SECURITY.md) and email the report privately instead.
 
   - type: textarea
     id: summary
