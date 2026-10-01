@@ -200,7 +200,7 @@ The entrypoint validates the requested mode, parameters, execution context, pack
 
 Correlation and reasoning only run **after** collection. They preserve provenance and never silently turn context into a confirmed threat.
 
-See [Architecture](docs/ARCHITECTURE.md) for the full technical design.
+See [Architecture](ARCHITECTURE.md) for the full technical design.
 
 ---
 
