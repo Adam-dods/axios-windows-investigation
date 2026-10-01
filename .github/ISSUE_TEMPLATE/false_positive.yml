@@ -1,0 +1,112 @@
+name: False-positive report
+description: Report a finding that appears incorrect or over-classified.
+title: "[False positive]: "
+labels: ["false-positive"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        AXIOS separates verified findings, review items, and context observations.
+        A finding that is **mis-classified** or **not supported by its evidence** is exactly what this form is for.
+
+  - type: input
+    id: finding-title
+    attributes:
+      label: Finding title
+    validations:
+      required: true
+
+  - type: input
+    id: finding-class
+    attributes:
+      label: Finding class
+      description: For example high priority, medium, review item, or context.
+    validations:
+      required: true
+
+  - type: input
+    id: mode
+    attributes:
+      label: Report or AXIOS mode
+      placeholder: "Network, Administrator, ..."
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: AXIOS release or commit
+      placeholder: "2026.9.27"
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it appears incorrect
+      description: Explain why the finding is not a security concern, or why the evidence does not support its current classification.
+    validations:
+      required: true
+
+  - type: textarea
+    id: supporting
+    attributes:
+      label: Supporting evidence
+      description: Provide redacted output, trusted configuration evidence, or other verification material.
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version and edition
+    validations:
+      required: true
+
+  - type: dropdown
+    id: context
+    attributes:
+      label: Execution context
+      options:
+        - Standard user
+        - Administrator
+    validations:
+      required: true
+
+  - type: input
+    id: products
+    attributes:
+      label: Relevant security products or configuration
+      description: For example an endpoint-security product, a group policy, or a custom hardening setting.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: correction
+    attributes:
+      label: Suggested correction type
+      options:
+        - Change the severity
+        - Improve the title
+        - Mark as context
+        - Add an evidence requirement
+        - Other
+    validations:
+      required: false
+
+  - type: textarea
+    id: correction-details
+    attributes:
+      label: Suggested correction details
+      description: Explain the correction you propose.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      description: Remove passwords, credentials, encryption keys, personal paths, host names, and unrelated machine data before submitting.
+      options:
+        - label: I have removed sensitive and unrelated machine data from this report.
+          required: true
