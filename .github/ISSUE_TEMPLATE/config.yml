@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/Adam-dods/axios-windows-investigation/blob/main/SECURITY.md
+    about: Do not use public Issues for unresolved vulnerabilities. Follow the private process in SECURITY.md.
