@@ -1,0 +1,120 @@
+name: Bug report
+description: Report a reproducible problem in AXIOS.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve AXIOS.
+        Please keep this report focused on **one** problem.
+        **Do not report security vulnerabilities here.** Follow [SECURITY.md](../blob/main/SECURITY.md) and email the report privately instead.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the problem clearly and briefly.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: AXIOS release or commit
+      description: For example `2026.9.27` or a commit SHA.
+      placeholder: "2026.9.27"
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version and edition
+      placeholder: "Windows 11 Pro 23H2"
+    validations:
+      required: true
+
+  - type: input
+    id: powershell
+    attributes:
+      label: PowerShell version
+      description: Run `$PSVersionTable.PSVersion` to find it.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: context
+    attributes:
+      label: Execution context
+      options:
+        - Standard user
+        - Administrator
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Command used
+      description: The exact command you ran.
+      render: powershell
+      placeholder: ".\\axios.ps1 -Mode <Mode>"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, ordered steps.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should AXIOS do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Frequency
+      options:
+        - Always
+        - Intermittent
+        - Observed once
+    validations:
+      required: false
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include the relevant console output, error message, or a redacted screenshot.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      description: Remove passwords, credentials, encryption keys, personal paths, host names, and unrelated machine data before submitting.
+      options:
+        - label: I have removed sensitive and unrelated machine data from this report.
+          required: true
