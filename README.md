@@ -11,7 +11,6 @@
 ![License](https://img.shields.io/badge/license-Apache%202.0-green)
 ![Validation](https://img.shields.io/badge/final%20run-59%20reports%2C%200%20failed-brightgreen)
 
-</div>
 
 > A missing signal is not a clean system. An unverified observation is not a confirmed threat. AXIOS is built around that distinction.
 
@@ -297,7 +296,6 @@ Registry Run entries, startup commands, services, scheduled tasks, startup folde
 ```powershell
 .\axios.ps1 -Mode Persistence
 ```
-![Persistence assessment](docs/images/persistence-assessment.png)
 
 ### Software
 Installed software, update exposure, relevant application posture, and inventory evidence.
@@ -312,7 +310,6 @@ Shows the latest completed assessment from the current PowerShell session, separ
 ```powershell
 .\axios.ps1 -Mode Results
 ```
-![Security assessment results](docs/images/results-summary.png)
 
 ---
 
