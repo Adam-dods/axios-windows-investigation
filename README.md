@@ -297,6 +297,8 @@ Registry Run entries, startup commands, services, scheduled tasks, startup folde
 .\axios.ps1 -Mode Persistence
 ```
 
+![Persistence assessment](docs/images/persistence-assessment.png)
+
 ### Software
 Installed software, update exposure, relevant application posture, and inventory evidence.
 
@@ -310,6 +312,8 @@ Shows the latest completed assessment from the current PowerShell session, separ
 ```powershell
 .\axios.ps1 -Mode Results
 ```
+
+![Security assessment results](docs/images/results-summary.png)
 
 ---
 
