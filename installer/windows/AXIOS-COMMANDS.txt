@@ -1,0 +1,45 @@
+AXIOS
+Windows Investigation Platform
+
+COMMAND REFERENCE
+
+Run commands from the extracted AXIOS package directory.
+
+1. USER
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\axios.ps1" -Mode User
+
+2. ADMINISTRATOR
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\axios.ps1" -Mode Administrator
+
+3. NETWORK
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\axios.ps1" -Mode Network
+
+Network branches:
+overview, services, connections, routing, dns, firewall, wifi,
+targeted, full
+
+4. SYSTEM
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\axios.ps1" -Mode System
+
+System branches:
+overview, quick, context
+
+5. PERSISTENCE
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\axios.ps1" -Mode Persistence
+
+6. SOFTWARE
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\axios.ps1" -Mode Software
+
+7. RESULTS
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\axios.ps1" -Mode Results
+
+8. HELP
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\axios.ps1" -Mode Help
+
+SYSTEM BRANCHES
+
+Quick system assessment:
+  .\axios.ps1 -Mode System -SystemFocus quick
+
+System context assessment:
+  .\axios.ps1 -Mode System -SystemFocus context
