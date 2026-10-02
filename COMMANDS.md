@@ -116,6 +116,12 @@ Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 
 Displays public modes, focused System and Network branches, parameters, privilege requirements, and examples. Use it to confirm the interface included in **your** package.
 
+![AXIOS command reference](docs/images/command-reference.png)
+
+![Help modes overview](docs/images/help-modes-overview.png)
+
+![Help developer modes](docs/images/help-modes-developer.png)
+
 ---
 
 ## User
@@ -137,6 +143,12 @@ Runs from a normal or elevated session and reviews evidence available to the cur
 **Expected heading:** `STANDARD USER SECURITY ASSESSMENT`
 
 **Typical result fields:** Assessment status, Collectors completed, Security findings, Visibility limitations, Execution context.
+
+![Standard-user assessment](docs/images/standard-user-assessment.png)
+
+![User execution surface](docs/images/user-execution-surface.png)
+
+![User exposure coverage](docs/images/user-exposure-coverage.png)
 
 > Access restrictions are reported as visibility limitations. They are **not** proof that the restricted area is clean.
 
@@ -174,6 +186,12 @@ This is the **complete** AXIOS investigation: 42 stages covering persistence, pr
 | **Findings** | High-priority findings, Medium findings, Raw context records, Collection errors |
 | **Reasoning** | Leading hypothesis, Hypothesis score, Independent sources, Contradictions, Unresolved facts, Next best checks |
 
+![Administrator investigation](docs/images/administrator-investigation.png)
+
+![Administrator investigation stages](docs/images/administrator-investigation-stages.png)
+
+![Administrator investigation summary](docs/images/administrator-investigation-summary.png)
+
 ### Smart file audit
 
 ```powershell
@@ -204,6 +222,9 @@ Reviews hardware trust, Secure Boot, TPM, BitLocker visibility, virtualization-b
 .\axios.ps1 -Mode System -Save
 ```
 
+
+![System security assessment](docs/images/system-security-assessment.png)
+
 ---
 
 ## Network
@@ -215,6 +236,10 @@ Reviews hardware trust, Secure Boot, TPM, BitLocker visibility, virtualization-b
 **Expected heading:** `NETWORK SECURITY ASSESSMENT`
 
 Can review adapters, IP configuration, DNS, routes, neighbors, firewall profiles, firewall-rule visibility, wireless configuration, TCP connections, UDP endpoints, listening services, and security-relevant observations.
+
+![Network security assessment](docs/images/network-security-assessment.png)
+
+![Network observations](docs/images/network-observations.png)
 
 | Focus | Command | What it reviews |
 |---|---|---|
@@ -283,6 +308,12 @@ Reviews Registry Run entries, startup commands, startup folders, scheduled tasks
 
 **Typical result groups:** `ASSESSMENT COVERAGE`, `PERSISTENCE SURFACE`, `WMI PERSISTENCE SUBSCRIPTIONS`.
 
+![Persistence assessment](docs/images/persistence-assessment.png)
+
+![Persistence assessment overview](docs/images/persistence-assessment-overview.png)
+
+![Persistence assessment coverage](docs/images/persistence-assessment-coverage.png)
+
 > A `partial` result means at least one persistence capability could not be collected completely.
 
 ---
@@ -318,6 +349,8 @@ Results separates verified security findings, review items, forensic visibility,
 
 > If PowerShell is closed, unsaved session-only results are gone.
 
+![Results summary](docs/images/results-summary.png)
+
 ---
 
 ## Developer commands
@@ -335,6 +368,12 @@ Runs from a standard or elevated session. **Heading:** `ADVANCED EXPOSURE ASSESS
 Displays assessment status, collectors returned, observations (with high and medium severity counts), execution context, configuration exposures, and visibility limitations.
 
 > It reports evidence. It does **not** exploit discovered weaknesses.
+
+![Developer exposure assessment](docs/images/developer-exposure.png)
+
+![Developer exposure summary](docs/images/developer-exposure-summary.png)
+
+![Developer exposure findings](docs/images/developer-exposure-findings.png)
 
 ### DeveloperCredential
 
