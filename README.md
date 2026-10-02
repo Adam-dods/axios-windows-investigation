@@ -459,6 +459,8 @@ No. Targeted checks accept only explicit hostnames or IPs, by design.
 
 ## Release
 
+AXIOS uses calendar releases. The current stable release is `2026.9.27`.
+
 | | |
 |---|---|
 | Release | October 2026, Stable |
