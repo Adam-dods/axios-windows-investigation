@@ -10,6 +10,7 @@
 ![Language](https://img.shields.io/badge/built%20with-Rust-orange)
 ![License](https://img.shields.io/badge/license-Apache%202.0-green)
 ![Validation](https://img.shields.io/badge/final%20run-59%20reports%2C%200%20failed-brightgreen)
+![CI](https://github.com/Adam-dods/axios-windows-investigation/actions/workflows/ci.yml/badge.svg)
 
 
 > A missing signal is not a clean system. An unverified observation is not a confirmed threat. AXIOS is built around that distinction.
