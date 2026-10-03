@@ -252,7 +252,7 @@ Runs from a standard or elevated session. Reviews user execution surfaces, acces
 ```powershell
 .\axios.ps1 -Mode User
 ```
-![Standard-user assessment](docs/images/standard-user-assessment.png)
+![Standard-user assessment](docs/images/standard-user-assessment.jpg)
 
 ### Administrator
 The complete **42-stage** investigation. Coordinates all primary collectors, integrity reviews, evidence correlation, investigation state, Reasoning Web, and response planning. Requires PowerShell as Administrator.
@@ -274,7 +274,7 @@ Hardware trust, kernel posture, security posture, health posture, boot protectio
 .\axios.ps1 -Mode System -SystemFocus quick
 .\axios.ps1 -Mode System -SystemFocus context
 ```
-![System security assessment](docs/images/system-security-assessment.png)
+![System security assessment](docs/images/system-security-assessment.jpg)
 
 ### Network
 Adapters, addresses, DNS, routing, firewall state, wireless configuration, listeners, connections, services, and bounded targeted checks.
@@ -299,7 +299,7 @@ Explicit, authorized target checks:
 
 > Targets must be explicit hostnames or IP addresses. CIDR ranges, wildcards, whitespace, and command-like input are rejected.
 
-![Network security assessment](docs/images/network-security-assessment.png)
+![Network security assessment](docs/images/network-security-assessment.jpg)
 
 ### Persistence
 Registry Run entries, startup commands, services, scheduled tasks, startup folders, extended persistence, and WMI permanent event subscriptions.
@@ -308,7 +308,7 @@ Registry Run entries, startup commands, services, scheduled tasks, startup folde
 .\axios.ps1 -Mode Persistence
 ```
 
-![Persistence assessment](docs/images/persistence-assessment.png)
+![Persistence assessment](docs/images/persistence-assessment.jpg)
 
 ### Software
 Installed software, update exposure, relevant application posture, and inventory evidence.
@@ -324,7 +324,7 @@ Shows the latest completed assessment from the current PowerShell session, separ
 .\axios.ps1 -Mode Results
 ```
 
-![Security assessment results](docs/images/results-summary.png)
+![Security assessment results](docs/images/results-summary.jpg)
 
 ---
 
