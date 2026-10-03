@@ -66,10 +66,10 @@ Set-Location "$Root\axios-windows-investigation"
 .\axios.ps1 -Mode Help
 ```
 
-Expected package directory:
+Expected package directory (example):
 
 ```text
-C:\Users\<your-user>\Downloads\AXIOS\axios-windows-investigation
+C:\Users\TestUser\Downloads\AXIOS\axios-windows-investigation
 ```
 
 AXIOS validates required package components before dependent investigations begin. If validation reports a missing file, extract the official ZIP again into a clean directory.

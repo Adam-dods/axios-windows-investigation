@@ -56,10 +56,10 @@ Set-Location "$Root\axios-windows-investigation"
 .\axios.ps1 -Mode Help
 ```
 
-The package is extracted to:
+Example extracted package directory:
 
 ```text
-C:\Users\<your-user>\Downloads\AXIOS\axios-windows-investigation
+C:\Users\TestUser\Downloads\AXIOS\axios-windows-investigation
 ```
 
 In later sessions, return with:
