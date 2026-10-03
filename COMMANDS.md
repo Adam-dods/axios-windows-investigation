@@ -144,7 +144,7 @@ Runs from a normal or elevated session and reviews evidence available to the cur
 
 **Typical result fields:** Assessment status, Collectors completed, Security findings, Visibility limitations, Execution context.
 
-![Standard-user assessment](docs/images/standard-user-assessment.png)
+![Standard-user assessment](docs/images/standard-user-assessment.jpg)
 
 ![User execution surface](docs/images/user-execution-surface.png)
 
@@ -223,7 +223,7 @@ Reviews hardware trust, Secure Boot, TPM, BitLocker visibility, virtualization-b
 ```
 
 
-![System security assessment](docs/images/system-security-assessment.png)
+![System security assessment](docs/images/system-security-assessment.jpg)
 
 ---
 
@@ -237,7 +237,7 @@ Reviews hardware trust, Secure Boot, TPM, BitLocker visibility, virtualization-b
 
 Can review adapters, IP configuration, DNS, routes, neighbors, firewall profiles, firewall-rule visibility, wireless configuration, TCP connections, UDP endpoints, listening services, and security-relevant observations.
 
-![Network security assessment](docs/images/network-security-assessment.png)
+![Network security assessment](docs/images/network-security-assessment.jpg)
 
 ![Network observations](docs/images/network-observations.png)
 
@@ -308,7 +308,7 @@ Reviews Registry Run entries, startup commands, startup folders, scheduled tasks
 
 **Typical result groups:** `ASSESSMENT COVERAGE`, `PERSISTENCE SURFACE`, `WMI PERSISTENCE SUBSCRIPTIONS`.
 
-![Persistence assessment](docs/images/persistence-assessment.png)
+![Persistence assessment](docs/images/persistence-assessment.jpg)
 
 ![Persistence assessment overview](docs/images/persistence-assessment-overview.png)
 
@@ -349,7 +349,7 @@ Results separates verified security findings, review items, forensic visibility,
 
 > If PowerShell is closed, unsaved session-only results are gone.
 
-![Results summary](docs/images/results-summary.png)
+![Results summary](docs/images/results-summary.jpg)
 
 ---
 
