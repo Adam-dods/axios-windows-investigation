@@ -100,7 +100,7 @@ The first stable release, dated **1 October 2026**, was researched and engineere
 .\axios.ps1 -Mode Results
 ```
 
-Download `axios-windows-investigation.zip` from **GitHub Releases**, extract it, and run from PowerShell.
+Download [`axios-windows-investigation.zip`](https://github.com/Adam-dods/axios-windows-investigation/releases/latest) from [GitHub Releases](https://github.com/Adam-dods/axios-windows-investigation/releases/latest), extract it, and run from PowerShell.
 
 ---
 
@@ -430,7 +430,7 @@ src/         Rust collectors, analysis, evidence models, and binaries
 tests/       Integration, runtime, precision, privacy, and contract tests
 installer/   Windows PowerShell orchestration and package assets
 scripts/     Build, packaging, and public launcher tooling
-docs/        Architecture, command, investigation, and security documentation
+docs/        Documentation images and visual assets
 .github/     Issue and pull-request templates
 ```
 
