@@ -98,11 +98,10 @@ fn build_report(snapshot: &Value, process_report: &Value) -> Value {
         .and_then(Value::as_u64)
         .unwrap_or(0);
 
-    let memory_used_percent = if total_kb == 0 {
-        None
-    } else {
-        Some(((total_kb.saturating_sub(free_kb)) * 100) / total_kb)
-    };
+    let memory_used_percent = total_kb
+        .saturating_sub(free_kb)
+        .saturating_mul(100)
+        .checked_div(total_kb);
 
     let process_findings = process_report
         .get("artifacts")
