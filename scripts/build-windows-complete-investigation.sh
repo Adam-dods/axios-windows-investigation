@@ -61,6 +61,10 @@ done
 
 mkdir -p "$OUTPUT_DIR"
 
+# Remove local build paths from compiler-generated strings and metadata.
+# Rust applies the last matching remap, so the project rule follows HOME.
+export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$HOME=/build --remap-path-prefix=$PROJECT_ROOT=/src"
+
 for name in "${NAMES[@]}"; do
   cargo build --manifest-path "$PROJECT_ROOT/Cargo.toml" \
     --release \
@@ -132,6 +136,11 @@ cp "$PROJECT_ROOT/installer/windows/AXIOS-COMMANDS.txt" \
 
 cp "$PROJECT_ROOT/README.md" "$ROOT/README.md"
 cp "$PROJECT_ROOT/LICENSE" "$ROOT/LICENSE"
+
+if /usr/bin/strings -a "$BIN"/*.exe | grep -qE '/home/|/Users/|DESKTOP-'; then
+  echo "AXIOS_RELEASE_BUILD_ERROR=local_build_path_detected"
+  exit 1
+fi
 
 (
   cd "$ROOT"
