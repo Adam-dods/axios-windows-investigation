@@ -108,9 +108,9 @@ Download `axios-windows-investigation.zip` from **GitHub Releases**, extract it,
 
 | Document | Contents |
 |---|---|
-| [COMMANDS.md](COMMANDS.md) | Complete command guide for every AXIOS mode |
-| [WINDOWS.md](WINDOWS.md) | Windows requirements, privileges, and visibility |
-| [CHANGELOG.md](CHANGELOG.md) | Release history and validation record |
+| [Commands.md](Commands.md) | Complete command guide for every AXIOS mode |
+| [Windows.md](Windows.md) | Windows requirements, privileges, and visibility |
+| [Changelog.md](Changelog.md) | Release history and validation record |
 
 ---
 
@@ -211,7 +211,7 @@ The entrypoint validates the requested mode, parameters, execution context, pack
 
 Correlation and reasoning only run **after** collection. They preserve provenance and never silently turn context into a confirmed threat.
 
-See [Architecture](ARCHITECTURE.md) for the full technical design.
+See [Architecture](Architecture.md) for the full technical design.
 
 ---
 
@@ -478,7 +478,7 @@ AXIOS is intended only for authorized investigation of systems you own or are pe
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for requirements, validation commands, commit expectations, and pull-request standards. Any change affecting evidence interpretation must preserve:
+See [Contributing.md](Contributing.md) for requirements, validation commands, commit expectations, and pull-request standards. Any change affecting evidence interpretation must preserve:
 
 - Evidence provenance
 - Bounded execution
@@ -492,4 +492,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for requirements, validation commands, co
 Licensed under the [Apache License 2.0](LICENSE).
 
 Copyright © 2026 Adam-dods.
-

@@ -64,7 +64,7 @@ Then:
 
 Before opening an Issue or Pull Request:
 
-1. Read [README.md](README.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [SECURITY.md](SECURITY.md).
+1. Read [README.md](README.md), [Architecture.md](Architecture.md), and [SECURITY.md](SECURITY.md).
 2. Search existing Issues and Pull Requests for related work.
 3. Test the latest supported release or current default branch.
 4. Record the exact AXIOS command used.

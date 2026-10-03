@@ -88,10 +88,10 @@ axios-windows-investigation
 │
 ├── axios.ps1                  Stable public PowerShell entrypoint
 ├── Cargo.toml / Cargo.lock
-├── README.md  CHANGELOG.md  CONTRIBUTING.md  SECURITY.md  LICENSE
+├── README.md  Changelog.md  Contributing.md  SECURITY.md  LICENSE
 │
 ├── docs
-│   ├── ARCHITECTURE.md
+│   ├── Architecture.md
 │   └── images                 Sanitized Windows runtime demonstrations
 │
 ├── installer
