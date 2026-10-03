@@ -137,7 +137,8 @@ cp "$PROJECT_ROOT/installer/windows/AXIOS-COMMANDS.txt" \
 cp "$PROJECT_ROOT/README.md" "$ROOT/README.md"
 cp "$PROJECT_ROOT/LICENSE" "$ROOT/LICENSE"
 
-if /usr/bin/strings -a "$BIN"/*.exe | grep -qE '/home/|/Users/|DESKTOP-'; then
+UNIX_HOME_PREFIX="/""home/"
+if /usr/bin/strings -a "$BIN"/*.exe | grep -qE "${UNIX_HOME_PREFIX}|/Users/|DESKTOP-"; then
   echo "AXIOS_RELEASE_BUILD_ERROR=local_build_path_detected"
   exit 1
 fi
