@@ -29,7 +29,7 @@ This document explains **what you need to run AXIOS**, **which commands need ele
 
 | Question | Answer |
 |---|---|
-| Do I need to install anything? | No. Extract the ZIP and start `axios.cmd` |
+| Do I need to install anything? | No. Extract the ZIP and run `axios.ps1` |
 | Which commands need Administrator? | Only `Administrator` (the full 42-stage investigation) |
 | Can I run everything else as a standard user? | Yes, with some protected evidence reported as unavailable |
 | Does Administrator guarantee full visibility? | No. Windows protections and security products can still limit it |
@@ -47,7 +47,7 @@ To run AXIOS you need:
 - Permission to investigate the system
 - Administrator PowerShell, **only** for the complete Administrator investigation
 
-AXIOS needs no permanent installation. Extract the package and start `.\axios.cmd` from the extracted directory. It opens a dedicated AXIOS PowerShell session using a temporary, process-only execution-policy override; it does not change Windows settings.
+AXIOS needs no permanent installation. Extract the package, use the process-only execution-policy command below, then run `.\axios.ps1` normally.
 
 ---
 
@@ -63,11 +63,10 @@ Expand-Archive -LiteralPath $Zip -DestinationPath $Root -Force
 
 Set-Location "$Root\axios-windows-investigation"
 
-# Opens AXIOS without changing Windows execution-policy settings.
-.\axios.cmd -Mode Help
+# Allows AXIOS in this PowerShell window only; Windows settings are unchanged.
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
-# Run later commands inside the AXIOS PowerShell session:
-.\axios.ps1 -Mode User
+.\axios.ps1 -Mode Help
 ```
 
 Expected package directory (example):
@@ -82,13 +81,19 @@ AXIOS validates required package components before dependent investigations begi
 
 ## PowerShell requirements
 
-PowerShell is AXIOS's public Windows interface. Start AXIOS with:
+PowerShell is AXIOS's public Windows interface. Before the first AXIOS command in a newly opened PowerShell window, run:
 
 ```powershell
-.\axios.cmd -Mode Help
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 ```
 
-The included launcher opens a dedicated AXIOS PowerShell session with a process-only execution-policy override. It does not modify the computer's execution-policy settings. Keep that AXIOS session open while running commands and using `Results`.
+Then use the normal AXIOS commands, for example:
+
+```powershell
+.\axios.ps1 -Mode Help
+```
+
+The setting applies only to the current PowerShell process and does not modify Windows settings. Keep that same PowerShell window open while running commands and using `Results`.
 
 ---
 
