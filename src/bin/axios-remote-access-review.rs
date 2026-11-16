@@ -145,15 +145,31 @@ fn build_report(snapshot: &Value) -> Value {
     let missing_registry_values: Vec<&str> = [
         ("rdp.fDenyTSConnections", "/rdp/denied"),
         ("rdp.UserAuthentication", "/rdp/nla"),
-        ("remote_assistance.fAllowToGetHelp", "/remote_assistance/allow_help"),
-        ("remote_assistance.fAllowFullControl", "/remote_assistance/allow_full_control"),
+        (
+            "remote_assistance.fAllowToGetHelp",
+            "/remote_assistance/allow_help",
+        ),
+        (
+            "remote_assistance.fAllowFullControl",
+            "/remote_assistance/allow_full_control",
+        ),
         ("smb_server.SMB1", "/smb_server/smb1"),
-        ("smb_server.RequireSecuritySignature", "/smb_server/require_signing"),
-        ("smb_client.RequireSecuritySignature", "/smb_client/require_signing"),
+        (
+            "smb_server.RequireSecuritySignature",
+            "/smb_server/require_signing",
+        ),
+        (
+            "smb_client.RequireSecuritySignature",
+            "/smb_client/require_signing",
+        ),
     ]
     .into_iter()
     .filter_map(|(name, pointer)| {
-        snapshot.pointer(pointer).filter(|value| !value.is_null()).is_none().then_some(name)
+        snapshot
+            .pointer(pointer)
+            .filter(|value| !value.is_null())
+            .is_none()
+            .then_some(name)
     })
     .collect();
 
