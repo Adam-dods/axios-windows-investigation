@@ -35,12 +35,15 @@ fn collect_snapshot() -> Result<Value> {
 $ErrorActionPreference = "Stop"
 
 function Read-AxiosRegistryValue($Path, $Name) {
-    try {
-        (Get-ItemProperty -Path $Path -Name $Name -ErrorAction Stop).$Name
+    # A registry key may exist without this optional value. Keep that
+    # observation unknown; errors reading the key must still stop collection.
+    $item = Get-ItemProperty -LiteralPath $Path -ErrorAction Stop
+    $property = $item.PSObject.Properties[$Name]
+    if ($null -eq $property) {
+        return $null
     }
-    catch {
-        throw
-    }
+
+    return $property.Value
 }
 
 $rdpPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server"
@@ -139,6 +142,20 @@ fn observed_enabled(value: &Value) -> Option<bool> {
 
 fn build_report(snapshot: &Value) -> Value {
     let mut findings = Vec::new();
+    let missing_registry_values: Vec<&str> = [
+        ("rdp.fDenyTSConnections", "/rdp/denied"),
+        ("rdp.UserAuthentication", "/rdp/nla"),
+        ("remote_assistance.fAllowToGetHelp", "/remote_assistance/allow_help"),
+        ("remote_assistance.fAllowFullControl", "/remote_assistance/allow_full_control"),
+        ("smb_server.SMB1", "/smb_server/smb1"),
+        ("smb_server.RequireSecuritySignature", "/smb_server/require_signing"),
+        ("smb_client.RequireSecuritySignature", "/smb_client/require_signing"),
+    ]
+    .into_iter()
+    .filter_map(|(name, pointer)| {
+        snapshot.pointer(pointer).filter(|value| !value.is_null()).is_none().then_some(name)
+    })
+    .collect();
 
     let rdp_enabled = snapshot.pointer("/rdp/denied").and_then(observed_enabled) == Some(false);
 
@@ -244,6 +261,8 @@ fn build_report(snapshot: &Value) -> Value {
 
     json!({
         "success": true,
+        "collection_status": if missing_registry_values.is_empty() { "complete" } else { "partial" },
+        "collection_gaps": missing_registry_values,
         "collector": "axios_remote_access_review",
         "read_only": true,
         "database_used": false,
@@ -266,11 +285,12 @@ fn build_report(snapshot: &Value) -> Value {
 mod tests {
 
     #[test]
-    fn registry_read_failure_is_not_silently_converted_to_clean_data() {
+    fn missing_registry_value_is_unknown_but_key_read_failure_remains_fatal() {
         let source = include_str!("axios-remote-access-review.rs");
 
-        assert!(source.contains("catch {\n        throw\n    }"));
-        assert!(!source.contains("catch {\n        $null\n    }"));
+        assert!(source.contains("Get-ItemProperty -LiteralPath $Path -ErrorAction Stop"));
+        assert!(source.contains("$item.PSObject.Properties[$Name]"));
+        assert!(source.contains("if ($null -eq $property) {\n        return $null"));
     }
     use super::*;
 
@@ -281,6 +301,35 @@ mod tests {
         }));
 
         assert_eq!(report["findings"][0]["priority"], "high");
+    }
+
+    #[test]
+    fn missing_smb1_is_partial_and_not_a_clean_or_enabled_verdict() {
+        let report = build_report(&json!({
+            "smb_server": { "require_signing": 1 },
+            "smb_client": { "require_signing": 1 },
+            "rdp": { "denied": 1, "nla": 1 },
+            "remote_assistance": { "allow_help": 0, "allow_full_control": 0 },
+            "services": []
+        }));
+
+        assert_eq!(report["collection_status"], "partial");
+        assert_eq!(report["collection_gaps"], json!(["smb_server.SMB1"]));
+        assert!(report["findings"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn observed_registry_values_have_complete_coverage() {
+        let report = build_report(&json!({
+            "smb_server": { "smb1": 0, "require_signing": 1 },
+            "smb_client": { "require_signing": 1 },
+            "rdp": { "denied": 1, "nla": 1 },
+            "remote_assistance": { "allow_help": 0, "allow_full_control": 0 },
+            "services": []
+        }));
+
+        assert_eq!(report["collection_status"], "complete");
+        assert_eq!(report["collection_gaps"], json!([]));
     }
 
     #[test]
