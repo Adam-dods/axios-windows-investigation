@@ -205,8 +205,11 @@ if ($Layer -eq "Results") {
         }
 
         foreach ($RunDirectory in @(
-            Get-ChildItem -LiteralPath $SearchDirectory -Directory \
-                -Filter "complete-investigation-*" -ErrorAction SilentlyContinue
+            Get-ChildItem `
+                -LiteralPath $SearchDirectory `
+                -Directory `
+                -Filter "complete-investigation-*" `
+                -ErrorAction SilentlyContinue
         )) {
             $FailurePath = Join-Path $RunDirectory.FullName "failure.txt"
             if (Test-Path -LiteralPath $FailurePath -PathType Leaf) {
