@@ -1,0 +1,38 @@
+name: AXIOS test ZIP
+
+on:
+  push:
+    branches:
+      - fix/missing-smb1-registry-value
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+      - name: Install Windows cross compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 file zip unzip
+      - name: Build and verify AXIOS test ZIP
+        run: |
+          set -euo pipefail
+          AXIOS_OUTPUT_DIR="$RUNNER_TEMP/axios-test" bash scripts/build-windows-complete-investigation.sh
+          cd "$RUNNER_TEMP/axios-test"
+          sha256sum axios-windows-investigation.zip > axios-windows-investigation.zip.sha256
+          unzip -t axios-windows-investigation.zip
+          test "$(unzip -Z1 axios-windows-investigation.zip | grep -Ec '^axios-windows-investigation/bin/[^/]+[.]exe$')" -eq 46
+      - uses: actions/upload-artifact@v4
+        with:
+          name: axios-smb1-test-package
+          path: |
+            ${{ runner.temp }}/axios-test/axios-windows-investigation.zip
+            ${{ runner.temp }}/axios-test/axios-windows-investigation.zip.sha256
+          if-no-files-found: error
+          retention-days: 7
