@@ -5,12 +5,11 @@ COMMAND REFERENCE
 
 Run commands from the extracted AXIOS package directory.
 
-START AXIOS FIRST
-.\axios.cmd -Mode Help
+BEFORE THE FIRST AXIOS COMMAND IN A NEW POWERSHELL WINDOW
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
-This opens a dedicated AXIOS PowerShell session with a temporary,
-process-only execution-policy override. It does not change Windows
-settings. Keep that session open, then run the commands below.
+This applies only to the current PowerShell process. It does not change
+Windows settings. Then run the normal AXIOS commands below.
 
 1. USER
 .\axios.ps1 -Mode User

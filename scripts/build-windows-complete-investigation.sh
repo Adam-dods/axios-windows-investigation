@@ -128,8 +128,6 @@ cp "$PROJECT_ROOT/installer/windows/Run-AXIOS.ps1" \
 cp "$PROJECT_ROOT/installer/windows/axios.ps1" \
   "$ROOT/axios.ps1"
 
-cp "$PROJECT_ROOT/installer/windows/axios.cmd" \
-  "$ROOT/axios.cmd"
 
 cp "$PROJECT_ROOT/installer/windows/Run-AXIOS-Layer.ps1" \
   "$ROOT/scripts/Run-AXIOS-Layer.ps1"
@@ -151,7 +149,6 @@ fi
   sha256sum \
     bin/*.exe \
     axios.ps1 \
-    axios.cmd \
     scripts/*.ps1 \
     AXIOS-COMMANDS.txt \
     README.md \
