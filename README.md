@@ -88,20 +88,21 @@ The first stable release, dated **1 October 2026**, was researched and engineere
 ## Quick start
 
 ```powershell
-# See everything AXIOS can do
-.\axios.ps1 -Mode Help
+# Start AXIOS. This opens a dedicated AXIOS PowerShell session
+# without changing the computer's execution-policy settings.
+.\axios.cmd -Mode Help
 
-# No admin required
+# In the AXIOS PowerShell session:
 .\axios.ps1 -Mode User
 
-# Full 42-stage investigation (run PowerShell as Administrator)
+# Full 42-stage investigation (start axios.cmd from an Administrator PowerShell)
 .\axios.ps1 -Mode Administrator
 
-# Review the latest completed assessment in this session
+# Review the latest completed assessment in that same AXIOS session
 .\axios.ps1 -Mode Results
 ```
 
-Download [`axios-windows-investigation.zip`](https://github.com/Adam-dods/axios-windows-investigation/releases/latest) from [GitHub Releases](https://github.com/Adam-dods/axios-windows-investigation/releases/latest), extract it, and run from PowerShell.
+Download [`axios-windows-investigation.zip`](https://github.com/Adam-dods/axios-windows-investigation/releases/latest) from [GitHub Releases](https://github.com/Adam-dods/axios-windows-investigation/releases/latest), extract it, start it with `axios.cmd`, and then run commands from the AXIOS PowerShell session.
 
 ---
 

@@ -37,7 +37,7 @@ How to extract, start, and use every supported AXIOS investigation mode.
 - Administrator PowerShell, **only** for `Administrator` mode
 - Authorization to investigate the system or network target
 
-AXIOS needs **no installation**. Extract the package and run `axios.ps1`.
+AXIOS needs **no installation**. Extract the package, start `axios.cmd`, and run `axios.ps1` commands inside the AXIOS PowerShell session.
 
 ---
 
@@ -53,7 +53,12 @@ $Root = "$env:USERPROFILE\Downloads\AXIOS"
 Expand-Archive -LiteralPath $Zip -DestinationPath $Root -Force
 Set-Location "$Root\axios-windows-investigation"
 
-.\axios.ps1 -Mode Help
+# Opens a dedicated AXIOS PowerShell session without changing
+# the computer's execution-policy settings.
+.\axios.cmd -Mode Help
+
+# Run later commands inside that AXIOS PowerShell session:
+.\axios.ps1 -Mode User
 ```
 
 Example extracted package directory:
