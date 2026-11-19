@@ -197,6 +197,42 @@ $Core = Join-Path $Root "bin\axios-core.exe"
 
 if ($Layer -eq "Results") {
     $Candidate = Get-AxiosResultCandidate
+    $FailureFiles = [System.Collections.Generic.List[object]]::new()
+
+    foreach ($SearchDirectory in $ResultSearchDirectory) {
+        if (-not (Test-Path -LiteralPath $SearchDirectory -PathType Container)) {
+            continue
+        }
+
+        foreach ($RunDirectory in @(
+            Get-ChildItem `
+                -LiteralPath $SearchDirectory `
+                -Directory `
+                -Filter "complete-investigation-*" `
+                -ErrorAction SilentlyContinue
+        )) {
+            $FailurePath = Join-Path $RunDirectory.FullName "failure.txt"
+            if (Test-Path -LiteralPath $FailurePath -PathType Leaf) {
+                $FailureFiles.Add((Get-Item -LiteralPath $FailurePath))
+            }
+        }
+    }
+
+    $LatestFailure = $FailureFiles |
+        Sort-Object LastWriteTimeUtc -Descending |
+        Select-Object -First 1
+
+    if (
+        $null -ne $LatestFailure -and
+        ($null -eq $Candidate -or
+            $LatestFailure.LastWriteTimeUtc -gt $Candidate.LastWriteTimeUtc)
+    ) {
+        throw (
+            "The latest Administrator investigation failed. " +
+            "Results from an earlier command must not be treated as its result. " +
+            "Failure report: " + $LatestFailure.FullName
+        )
+    }
 
     if ($null -eq $Candidate) {
         throw "AXIOS could not find a previous result."
