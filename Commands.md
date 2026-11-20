@@ -43,7 +43,7 @@ AXIOS needs **no installation**. The downloaded file contains the package and ex
 
 ## Extract and start
 
-1. Download the single `axios-windows-investigation.cmd` from the **GitHub release** into `Downloads`.
+1. For the next-release candidate, build the single `axios-windows-investigation.cmd` file into `Downloads`. The currently published `2026.9.27` release still uses a ZIP.
 2. Run the file. It shows inline extraction progress and returns to the terminal when complete.
 
 Or open PowerShell and run this short command from Downloads:
