@@ -80,10 +80,12 @@ fn run() -> Result<()> {
         let credential = collect_active_wifi_credential()?;
 
         print_heading("PRIVATE NETWORK CREDENTIAL ACCESS");
-        println!("SSID                   : {}", credential.ssid);
-        println!("Authentication         : {}", credential.authentication);
-        println!("Cipher                 : {}", credential.cipher);
-        println!("Wi-Fi password         : {}", credential.password);
+        print_table(&[
+            ("SSID", credential.ssid.as_str()),
+            ("Authentication", credential.authentication.as_str()),
+            ("Cipher", credential.cipher.as_str()),
+            ("Wi-Fi password", credential.password.as_str()),
+        ]);
         println!();
 
         print!("Save an encrypted copy? [Y/N]: ");
@@ -167,9 +169,11 @@ fn decrypt_saved_credential() -> Result<()> {
     }
 
     print_heading("ENCRYPTED CREDENTIAL ARCHIVE");
+    println!("{:<4}  {}", "#", "Archive in Downloads");
+    println!("{:<4}  {}", "----", "-----------------------------");
     for (index, path) in files.iter().enumerate() {
         println!(
-            "[{}] {}",
+            "{:<4}  {}",
             index + 1,
             path.file_name()
                 .and_then(|value| value.to_str())
@@ -209,15 +213,17 @@ fn decrypt_saved_credential() -> Result<()> {
     println!();
     print_heading("PRIVATE NETWORK CREDENTIAL ACCESS");
 
-    for (name, value) in fields {
+    let display_rows: Vec<(String, String)> = fields.iter().map(|(name, value)| {
         let display = match value {
             serde_json::Value::String(text) => text.clone(),
             serde_json::Value::Null => "Not available".to_string(),
             other => other.to_string(),
         };
-
-        println!("{name:<22}: {display}");
-    }
+        (name.to_string(), display)
+    }).collect();
+    println!("{:<22}  {}", "Field", "Decrypted value");
+    println!("{:<22}  {}", "----------------------", "-----------------------------");
+    for (name, display) in &display_rows { println!("{name:<22}  {display}"); }
 
     println!("Decryption status      : authenticated");
     println!("Plaintext file created : no");
@@ -255,9 +261,17 @@ fn decrypt_file(path: &PathBuf, password: &[u8]) -> Result<Vec<u8>> {
 }
 
 #[cfg(windows)]
+fn print_table(rows: &[(&str, &str)]) {
+    println!("{:<22}  {}", "Field", "Value");
+    println!("{:<22}  {}", "----------------------", "-----------------------------");
+    for (name, value) in rows {
+        println!("{name:<22}  {value}");
+    }
+}
+
+#[cfg(windows)]
 fn print_heading(title: &str) {
     println!("{title}");
-    println!("{}", "=".repeat(title.chars().count()));
 }
 
 #[cfg(windows)]

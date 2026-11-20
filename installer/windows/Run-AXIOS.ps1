@@ -44,6 +44,11 @@ param(
     )]
     [string]$SystemFocus = "overview",
 
+    [ValidateSet("General", "System", "SystemQuick", "SystemContext", "Persistence", "Software")]
+    [string]$Focus = "General",
+
+    [switch]$Decrypt,
+
     [switch]$DeveloperCredentialView,
 
     [switch]$DecryptCredentialFile,
@@ -117,6 +122,26 @@ function Initialize-AxiosConsoleSession {
         -not [string]::IsNullOrWhiteSpace($ExistingSession) -and
         (Test-Path -LiteralPath $ExistingSession -PathType Container)
     ) {
+        if ($env:AXIOS_CMD_SESSION -eq "1") {
+            $Expiry = [DateTime]::UtcNow.AddDays(-1)
+            foreach ($OldItem in @(Get-ChildItem -LiteralPath $ExistingSession -Force)) {
+                if ($OldItem.LastWriteTimeUtc -lt $Expiry) {
+                    Remove-Item -LiteralPath $OldItem.FullName -Recurse -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        return $ExistingSession
+    }
+
+    if (
+        $env:AXIOS_CMD_SESSION -eq "1" -and
+        -not [string]::IsNullOrWhiteSpace($ExistingSession) -and
+        $ExistingSession.StartsWith(
+            (Join-Path $env:LOCALAPPDATA "AXIOS"),
+            [StringComparison]::OrdinalIgnoreCase
+        )
+    ) {
+        $null = New-Item -ItemType Directory -Path $ExistingSession -Force -ErrorAction Stop
         return $ExistingSession
     }
 
@@ -156,7 +181,10 @@ function Initialize-AxiosConsoleSession {
     )
 
     $CleanupEvent = "AXIOS.SessionCleanup.$PID"
-    if (-not (Get-EventSubscriber -SourceIdentifier $CleanupEvent -ErrorAction SilentlyContinue)) {
+    if (
+        $env:AXIOS_CMD_SESSION -ne "1" -and
+        -not (Get-EventSubscriber -SourceIdentifier $CleanupEvent -ErrorAction SilentlyContinue)
+    ) {
         $null = Register-EngineEvent `
             -SourceIdentifier PowerShell.Exiting `
             -SupportEvent `
@@ -196,6 +224,14 @@ $IsHiddenDeveloperCredentialCommand = (
         "DeveloperArchive"
     )
 )
+
+if ($PSBoundParameters.ContainsKey("Focus") -and $Mode -ne "User") {
+    throw "AXIOS parameter -Focus is accepted only with -Mode User."
+}
+
+if ($Decrypt -and $Mode -ne "DeveloperCredential") {
+    throw "AXIOS parameter -Decrypt requires -Mode DeveloperCredential."
+}
 
 $IsPrivateDeveloperCredentialCommand = (
     $IsDeveloperCredentialView -or
@@ -339,6 +375,7 @@ $AxiosUtf8 = [System.Text.UTF8Encoding]::new($false)
 [Console]::InputEncoding = $AxiosUtf8
 [Console]::OutputEncoding = $AxiosUtf8
 $OutputEncoding = $AxiosUtf8
+$env:AXIOS_TABLE_OUTPUT = "1"
 
 function Test-AxiosAdministrator {
     $Identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -479,62 +516,44 @@ function Show-AxiosHelp {
 AXIOS
 Windows Investigation Platform
 
-COMMAND REFERENCE
-
 MAIN COMMANDS
 
-1. User
-   .\axios.ps1 -Mode User
+Command                                      Purpose
+-------------------------------------------  ------------------------------
+.\axios.cmd -Mode User                       Standard-user investigation
+.\axios.cmd -Mode Network                    Network investigation
+.\axios.cmd -Mode Administrator              Complete 42-stage investigation
 
-2. Administrator
-   .\axios.ps1 -Mode Administrator
+USER FOCUS
+.\axios.cmd -Mode User -Focus System
+.\axios.cmd -Mode User -Focus SystemQuick
+.\axios.cmd -Mode User -Focus SystemContext
+.\axios.cmd -Mode User -Focus Persistence
+.\axios.cmd -Mode User -Focus Software
 
-3. Network
-   .\axios.ps1 -Mode Network
-   Branches: overview, services, connections, routing, dns,
-             firewall, wifi, targeted, full
+NETWORK FOCUS
+.\axios.cmd -Mode Network -NetworkFocus overview
+.\axios.cmd -Mode Network -NetworkFocus wifi
+.\axios.cmd -Mode Network -NetworkFocus connections
+.\axios.cmd -Mode Network -NetworkFocus services
+.\axios.cmd -Mode Network -NetworkFocus dns
+.\axios.cmd -Mode Network -NetworkFocus routing
+.\axios.cmd -Mode Network -NetworkFocus firewall
+.\axios.cmd -Mode Network -NetworkFocus full
+.\axios.cmd -Mode Network -NetworkFocus targeted -Target 127.0.0.1 -Ports 80
 
-4. System
-   .\axios.ps1 -Mode System
-   Branches: overview, quick, context
+OTHER
+.\axios.cmd -Mode Administrator -AuditMode smart -MaxFiles 5000
+.\axios.cmd -Mode Results
+.\axios.cmd -Mode Help
 
-5. Persistence
-   .\axios.ps1 -Mode Persistence
-
-6. Software
-   .\axios.ps1 -Mode Software
-
-7. Results
-   .\axios.ps1 -Mode Results
-
-HELP
-
-8. Help
-   .\axios.ps1 -Mode Help
-
-BRANCH EXAMPLES
-
-System quick assessment:
-  .\axios.ps1 -Mode System -SystemFocus quick
-
-System context assessment:
-  .\axios.ps1 -Mode System -SystemFocus context
-
-Focused network firewall review:
-  .\axios.ps1 -Mode Network -NetworkFocus firewall
-
-Focused network connections:
-  .\axios.ps1 -Mode Network -NetworkFocus connections
-
-Authorized targeted connection checks:
-  .\axios.ps1 -Mode Network -NetworkFocus connections -Target 192.0.2.10 -Ports 80,443
-
-Administrator smart investigation:
-  .\axios.ps1 -Mode Administrator -AuditMode smart -MaxFiles 5000
+The PowerShell launcher .\axios.ps1 accepts the same parameters.
+Legacy System, Persistence, and Software modes remain available.
 
 Add -Save to a normal assessment command to retain its artifacts.
 Without -Save, evidence remains available only in the current
-PowerShell session. Results reads the latest completed command.
+PowerShell session, or the current user's CMD result session.
+Results reads the latest completed command.
 '@
 }
 
@@ -563,7 +582,7 @@ try {
     }
 
     "DeveloperCredential" {
-        Invoke-AxiosDeveloperCredentialTool
+        Invoke-AxiosDeveloperCredentialTool -Decrypt:$Decrypt
         return
     }
 
@@ -573,10 +592,19 @@ try {
     }
 
     "User" {
-        $Runner = Get-AxiosRunner `
-            "Run-AXIOS-Standard-User-Audit.ps1"
-
-        & $Runner -OutputDirectory $OutputDirectory
+        if ($Focus -eq "General") {
+            $Runner = Get-AxiosRunner "Run-AXIOS-Standard-User-Audit.ps1"
+            & $Runner -OutputDirectory $OutputDirectory
+        }
+        else {
+            $FocusedLayer = switch ($Focus) {
+                "SystemQuick" { "Quick" }
+                "SystemContext" { "Context" }
+                default { $Focus }
+            }
+            $Runner = Get-AxiosRunner "Run-AXIOS-Layer.ps1"
+            & $Runner -Layer $FocusedLayer -OutputDirectory $OutputDirectory
+        }
         return
     }
 
@@ -596,6 +624,12 @@ try {
             -MaxFiles $MaxFiles `
             -AuditMode $AuditMode `
             -OutputDirectory $OutputDirectory
+
+        $ResultsRunner = Get-AxiosRunner "Run-AXIOS-Layer.ps1"
+        & $ResultsRunner `
+            -Layer Results `
+            -OutputDirectory $OutputDirectory `
+            -ResultSearchDirectory @($OutputDirectory)
 
         return
     }
@@ -759,6 +793,20 @@ try {
             throw "Unsupported AXIOS mode: $Mode"
         }
     }
+}
+catch {
+    $NativeError = $_.Exception.GetBaseException()
+    if (
+        $NativeError -is [ComponentModel.Win32Exception] -and
+        $NativeError.NativeErrorCode -in @(577, 1260)
+    ) {
+        throw (
+            "Windows application control blocked an AXIOS executable. " +
+            "Review CodeIntegrity event 3077 and Windows Security app-control settings. " +
+            "AXIOS cannot override a Windows policy."
+        )
+    }
+    throw
 }
 finally {
     if (

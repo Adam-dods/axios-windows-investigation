@@ -677,8 +677,24 @@ try {
         $AxiosUtf8
     )
 
-    foreach ($ReportLine in $ReportLines) {
-        Write-Host $ReportLine
+    if ($env:AXIOS_TABLE_OUTPUT -eq "1") {
+        . (Join-Path $PSScriptRoot "Write-AXIOS-Terminal-Results.ps1")
+        $Important = @($Result.findings | Where-Object {
+            $_.severity -in @('high','medium') -or $_.priority -in @('high','medium')
+        })
+        $Other = @($Result.findings | Where-Object {
+            $_.severity -notin @('high','medium') -and $_.priority -notin @('high','medium')
+        })
+        $DisplaySummary = [PSCustomObject]@{
+            overall_status = $Result.collection_status
+            confirmed_threats = 0
+        }
+        $SavedPath = if ($env:AXIOS_CONSOLE_SESSION -eq "1") { "" } else { $JsonPath }
+        Write-AxiosTerminalResults -Summary $DisplaySummary -Findings $Important `
+            -Context $Other -Gaps $Gaps -SavedPath $SavedPath
+    }
+    else {
+        foreach ($ReportLine in $ReportLines) { Write-Host $ReportLine }
     }
 
     if ($env:AXIOS_CONSOLE_SESSION -ne "1") {

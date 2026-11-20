@@ -36,6 +36,11 @@ param(
     [ValidateSet("overview", "quick", "context")]
     [string]$SystemFocus = "overview",
 
+    [ValidateSet("General", "System", "SystemQuick", "SystemContext", "Persistence", "Software")]
+    [string]$Focus = "General",
+
+    [switch]$Decrypt,
+
     [switch]$DeveloperCredentialView,
     [switch]$DecryptCredentialFile,
     [switch]$DeveloperExposureView,

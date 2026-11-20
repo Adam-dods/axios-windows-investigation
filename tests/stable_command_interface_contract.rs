@@ -87,9 +87,9 @@ fn command_reference_documents_only_the_public_interface() {
         "-Mode User",
         "-Mode Administrator",
         "-Mode Network",
-        "-Mode System",
-        "-Mode Persistence",
-        "-Mode Software",
+        "-Focus System",
+        "-Focus Persistence",
+        "-Focus Software",
         "-Mode Results",
     ] {
         assert!(

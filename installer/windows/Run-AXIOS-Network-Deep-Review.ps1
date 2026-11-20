@@ -291,6 +291,13 @@ $DetailedReport = Join-Path `
     $AxiosUtf8
 )
 
+if ($env:AXIOS_TABLE_OUTPUT -eq "1") {
+    . (Join-Path $PSScriptRoot "Write-AXIOS-Terminal-Results.ps1")
+    $SavedPath = if ($env:AXIOS_CONSOLE_SESSION -eq "1") { "" } else { $Output }
+    Write-AxiosTerminalNetwork -Report $Report -Focus $Focus -SavedPath $SavedPath
+    return
+}
+
 Write-Host ""
 $NetworkHeading = "NETWORK SECURITY ASSESSMENT"
 Write-Host $NetworkHeading

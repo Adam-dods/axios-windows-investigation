@@ -88,24 +88,16 @@ The first stable release, dated **1 October 2026**, was researched and engineere
 ## Quick start
 
 ```powershell
-# Allows AXIOS only in this PowerShell window; it does not change
-# the computer's execution-policy settings.
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-
-# See everything AXIOS can do
-.\axios.ps1 -Mode Help
-
-# No admin required
-.\axios.ps1 -Mode User
-
-# Full 42-stage investigation (run PowerShell as Administrator)
-.\axios.ps1 -Mode Administrator
-
-# Review the latest completed assessment in this session
-.\axios.ps1 -Mode Results
+# The same axios.cmd commands work in CMD and PowerShell.
+.\axios.cmd -Mode Help
+.\axios.cmd -Mode User
+.\axios.cmd -Mode Network
+# Run the terminal as Administrator for the full investigation.
+.\axios.cmd -Mode Administrator
+.\axios.cmd -Mode Results
 ```
 
-Download [`axios-windows-investigation.zip`](https://github.com/Adam-dods/axios-windows-investigation/releases/latest) from [GitHub Releases](https://github.com/Adam-dods/axios-windows-investigation/releases/latest), extract it, run the process-only startup command below, and then use `axios.ps1` normally.
+Download [`axios-windows-investigation.zip`](https://github.com/Adam-dods/axios-windows-investigation/releases/latest) from [GitHub Releases](https://github.com/Adam-dods/axios-windows-investigation/releases/latest), extract it, and run `axios.cmd` from CMD or PowerShell. The existing `axios.ps1` commands remain available in PowerShell.
 
 ---
 
@@ -390,7 +382,7 @@ A `partial` result is **not necessarily a software failure**. It can mean an acc
 
 ## Saving artifacts
 
-Without `-Save`, assessment evidence exists only for the current PowerShell session. Add `-Save` to retain artifacts:
+Without `-Save`, PowerShell keeps evidence for the current session. The CMD launcher caches the latest result in the current user profile and removes entries older than one day. Add `-Save` to retain artifacts:
 
 ```powershell
 .\axios.ps1 -Mode System -Save

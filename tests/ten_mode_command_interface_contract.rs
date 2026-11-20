@@ -13,9 +13,6 @@ fn launcher_exposes_seven_main_help_and_three_hidden_developer_modes() {
         "User",
         "Administrator",
         "Network",
-        "System",
-        "Persistence",
-        "Software",
         "Results",
         "DeveloperExposure",
         "DeveloperCredential",
@@ -27,14 +24,15 @@ fn launcher_exposes_seven_main_help_and_three_hidden_developer_modes() {
         );
     }
 
+    for focus in ["System", "Persistence", "Software"] {
+        assert!(COMMANDS.contains(&format!("-Focus {focus}")));
+    }
+
     for public_mode in [
         "Help",
         "User",
         "Administrator",
         "Network",
-        "System",
-        "Persistence",
-        "Software",
         "Results",
     ] {
         assert!(

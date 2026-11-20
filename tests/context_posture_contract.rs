@@ -19,7 +19,7 @@ fn context_is_a_system_focus_branch() {
     assert!(LAUNCHER.contains("\"Context\""));
     assert!(LAUNCHER.contains("-Layer $SystemLayer"));
 
-    assert!(COMMANDS.contains("-Mode System -SystemFocus context"));
+    assert!(COMMANDS.contains("-Mode User -Focus SystemContext"));
     assert!(!COMMANDS.contains("-Mode Context"));
 }
 #[test]

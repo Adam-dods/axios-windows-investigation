@@ -231,9 +231,29 @@ $operatingSystem = Invoke-AxiosExposureSource 'operating_system' {{
 
 $hotfixes = @(
     Invoke-AxiosExposureSource 'hotfixes' {{
-        Get-AxiosManagementInstance "Win32_QuickFixEngineering" |
-            Sort-Object InstalledOn -Descending |
-            Select-Object -First 100 HotFixID, InstalledOn, Description
+        $dateUnavailable = $false
+        $entries = @(
+            foreach ($hotfix in @(Get-AxiosManagementInstance "Win32_QuickFixEngineering")) {{
+                $installedOn = $null
+                try {{
+                    if ($null -ne $hotfix.InstalledOn) {{
+                        $installedOn = ([datetime]$hotfix.InstalledOn).ToString('o')
+                    }}
+                }}
+                catch {{
+                    $dateUnavailable = $true
+                }}
+                [PSCustomObject]@{{
+                    HotFixID = [string]$hotfix.HotFixID
+                    Description = [string]$hotfix.Description
+                    InstalledOn = $installedOn
+                }}
+            }}
+        )
+        if ($dateUnavailable) {{
+            $collectionErrors.Add('Some hotfix installation dates are unavailable; hotfix IDs were retained.')
+        }}
+        $entries | Sort-Object InstalledOn -Descending | Select-Object -First 100
     }} @()
 )
 

@@ -1048,6 +1048,20 @@ if ($Layer -eq "Results") {
         ($Report | ConvertTo-Json -Depth 30),
         $AxiosUtf8
     )
+    $Result["detailed_report"] = $DetailedResultPath
+
+    if ($env:AXIOS_TABLE_OUTPUT -eq "1") {
+        . (Join-Path $PSScriptRoot "Write-AXIOS-Terminal-Results.ps1")
+        $SavedPath = if ($env:AXIOS_CONSOLE_SESSION -eq "1") { "" } else { $Candidate.FullName }
+        Write-AxiosTerminalResults `
+            -Summary $Result `
+            -Findings $ImportantFindings `
+            -Context $ForensicObservations `
+            -Gaps $Errors `
+            -Checks $NextBestChecks `
+            -SavedPath $SavedPath
+        return
+    }
 
     Write-Host ""
     $SummaryHeading = "SECURITY ASSESSMENT SUMMARY"
