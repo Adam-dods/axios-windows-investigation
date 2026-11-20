@@ -46,19 +46,17 @@ try {
     )
     $installer = Join-Path $unzipFixture 'axios-windows-investigation.cmd'
     $template = [IO.File]::ReadAllText((Join-Path $root 'installer\windows\axios-unzip.cmd'))
+    if ($template -match '(?im)^\s*pause\s*$|Start-Process\s+explorer') {
+        throw 'The extraction command must finish without pausing or opening Explorer.'
+    }
     $payload = [Convert]::ToBase64String([IO.File]::ReadAllBytes($fixtureZip))
     [IO.File]::WriteAllText($installer, ($template + ":AXIOS_ARCHIVE_BASE64`n::" + $payload + "`n"), [Text.Encoding]::ASCII)
     Remove-Item -LiteralPath $fixtureZip
-    $env:AXIOS_UNZIP_TEST_MODE = '1'
-    try {
-        $unzipOutput = & $installer | Out-String
-        if ($LASTEXITCODE -ne 0 -or $unzipOutput -notmatch 'AXIOS unzip\s+100%' -or
-            -not (Test-Path -LiteralPath (Join-Path $unzipFixture 'AXIOS\axios-windows-investigation\readme.txt'))) {
-            throw 'Self-extracting package failed to extract and report 100 percent.'
-        }
-    }
-    finally {
-        Remove-Item Env:AXIOS_UNZIP_TEST_MODE -ErrorAction SilentlyContinue
+    $unzipOutput = & $installer | Out-String
+    if ($LASTEXITCODE -ne 0 -or $unzipOutput -notmatch 'AXIOS unzip\s+100%' -or
+        $unzipOutput -match 'AXIOS folder:|MAIN COMMANDS|Appuyez' -or
+        -not (Test-Path -LiteralPath (Join-Path $unzipFixture 'AXIOS\axios-windows-investigation\readme.txt'))) {
+        throw 'Self-extracting package failed to extract and report 100 percent.'
     }
 
     . (Join-Path $root 'installer\windows\Write-AXIOS-Terminal-Results.ps1')

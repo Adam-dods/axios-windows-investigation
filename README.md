@@ -97,7 +97,7 @@ The first stable release, dated **1 October 2026**, was researched and engineere
 .\axios.cmd -Mode Results
 ```
 
-Download the single `axios-windows-investigation.cmd` file into Downloads and open it. It contains the complete AXIOS package, extracts it into `Downloads\AXIOS` with an inline console progress bar, and opens the extracted folder. Run `axios.cmd` from CMD or PowerShell afterward. The existing `axios.ps1` commands remain available in PowerShell.
+Download the single `axios-windows-investigation.cmd` file into Downloads and run it. It contains the complete AXIOS package, extracts it into `Downloads\AXIOS` with an inline console progress bar, then returns to the terminal without starting an investigation. Run `axios.cmd` from CMD or PowerShell afterward. The existing `axios.ps1` commands remain available in PowerShell.
 
 ---
 

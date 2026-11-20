@@ -4,7 +4,6 @@ color 07 >nul
 set "AXIOS_INSTALLER_PATH=%~f0"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$source=[IO.File]::ReadAllText($env:AXIOS_INSTALLER_PATH); $start=$source.LastIndexOf(':AXIOS_POWERSHELL'); $end=$source.LastIndexOf(':AXIOS_ARCHIVE_BASE64'); if($start -lt 0 -or $end -le $start){throw 'The AXIOS package is incomplete.'}; Invoke-Expression $source.Substring($start+':AXIOS_POWERSHELL'.Length,$end-$start-':AXIOS_POWERSHELL'.Length)"
 set "AXIOS_EXIT_CODE=%ERRORLEVEL%"
-if not "%AXIOS_UNZIP_TEST_MODE%"=="1" pause
 exit /b %AXIOS_EXIT_CODE%
 :AXIOS_POWERSHELL
 $ErrorActionPreference = 'Stop'
@@ -52,8 +51,4 @@ finally {
 $package = Join-Path $destination 'axios-windows-investigation'
 if (-not (Test-Path -LiteralPath (Join-Path $package 'axios.cmd') -PathType Leaf)) {
     throw 'The ZIP did not contain the AXIOS launcher.'
-}
-Write-Host ('AXIOS folder: {0}' -f $package)
-if ($env:AXIOS_UNZIP_TEST_MODE -ne '1') {
-    Start-Process explorer.exe -ArgumentList ('"{0}"' -f $package)
 }
