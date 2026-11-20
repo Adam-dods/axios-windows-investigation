@@ -29,6 +29,12 @@ function Get-AxiosConsoleFirst {
     return $Default
 }
 
+function Get-AxiosConsoleNested {
+    param([AllowNull()][object]$Item, [string[]]$Path)
+    foreach ($name in $Path) { $Item = Get-AxiosConsoleProperty $Item $name }
+    return $Item
+}
+
 function Get-AxiosConsoleFindingRows {
     param([object[]]$Findings)
     foreach ($finding in $Findings) {
@@ -70,31 +76,31 @@ function Get-AxiosConsoleValue {
 function Write-AxiosTerminalLayer {
     param([object]$LayerResult, [System.Collections.IDictionary]$ReportData,
           [string]$SavedPath = '')
-    $name = [string]$LayerResult.layer
+    $name = [string](Get-AxiosConsoleProperty $LayerResult 'layer')
     Write-Host ''
     Write-Host ('AXIOS {0}  {1}' -f $name.ToUpperInvariant(),
-        ([string]$LayerResult.collection_status).ToUpperInvariant())
+        ([string](Get-AxiosConsoleProperty $LayerResult 'collection_status')).ToUpperInvariant())
     Write-AxiosConsoleTable @(
-        [pscustomobject]@{ Area='Reports'; Result=@($LayerResult.reports).Count }
-        [pscustomobject]@{ Area='Partial reports'; Result=$LayerResult.summary.reports_partial }
-        [pscustomobject]@{ Area='Failed reports'; Result=$LayerResult.summary.reports_failed }
-        [pscustomobject]@{ Area='Security findings'; Result=@($LayerResult.findings).Count }
-        [pscustomobject]@{ Area='Context observations'; Result=@($LayerResult.context_observations).Count }
+        [pscustomobject]@{ Area='Reports'; Result=@(Get-AxiosConsoleProperty $LayerResult 'reports' | Where-Object { $null -ne $_ }).Count }
+        [pscustomobject]@{ Area='Partial reports'; Result=(Get-AxiosConsoleNested $LayerResult @('summary','reports_partial')) }
+        [pscustomobject]@{ Area='Failed reports'; Result=(Get-AxiosConsoleNested $LayerResult @('summary','reports_failed')) }
+        [pscustomobject]@{ Area='Security findings'; Result=@(Get-AxiosConsoleProperty $LayerResult 'findings' | Where-Object { $null -ne $_ }).Count }
+        [pscustomobject]@{ Area='Context observations'; Result=@(Get-AxiosConsoleProperty $LayerResult 'context_observations' | Where-Object { $null -ne $_ }).Count }
     )
     Write-Host 'ASSESSMENT COVERAGE'
-    Write-AxiosConsoleTable @($LayerResult.reports | ForEach-Object {
+    Write-AxiosConsoleTable @(Get-AxiosConsoleProperty $LayerResult 'reports' | Where-Object { $null -ne $_ } | ForEach-Object {
         [pscustomobject]@{
-            Collector=[string]$_.command
-            Status=[string]$_.collection_status
-            Findings=$_.findings
-            Context=$_.context_observations
-            Errors=$_.collection_errors
+            Collector=[string](Get-AxiosConsoleProperty $_ 'command')
+            Status=[string](Get-AxiosConsoleProperty $_ 'collection_status')
+            Findings=(Get-AxiosConsoleProperty $_ 'findings')
+            Context=(Get-AxiosConsoleProperty $_ 'context_observations')
+            Errors=(Get-AxiosConsoleProperty $_ 'collection_errors')
         }
     })
     foreach ($entry in $ReportData.GetEnumerator()) {
         $report = $entry.Value
         if ($null -eq $report) { continue }
-        $summary = $report.summary
+        $summary = Get-AxiosConsoleProperty $report 'summary'
         if ($null -eq $summary) { continue }
         $rows = @($summary.PSObject.Properties | Where-Object {
             $null -ne $_.Value -and ($_.Value -is [string] -or $_.Value -is [ValueType])
@@ -110,32 +116,38 @@ function Write-AxiosTerminalLayer {
         $context = $ReportData['context-posture']
         Write-Host 'TIME, LANGUAGE AND NETWORK CONTEXT'
         Write-AxiosConsoleTable @(
-            [pscustomobject]@{ Setting='Local time'; Observed=$context.time.local_time }
-            [pscustomobject]@{ Setting='UTC time'; Observed=$context.time.utc_time }
-            [pscustomobject]@{ Setting='Time zone'; Observed=$context.time.timezone.Id }
-            [pscustomobject]@{ Setting='Synchronization'; Observed=$context.time.synchronization_state }
-            [pscustomobject]@{ Setting='Culture'; Observed=$context.locale.culture.Name }
-            [pscustomobject]@{ Setting='UI language'; Observed=$context.locale.ui_culture.Name }
-            [pscustomobject]@{ Setting='Public profiles'; Observed=$context.network_context.public_profiles }
-            [pscustomobject]@{ Setting='Private profiles'; Observed=$context.network_context.private_profiles }
+            [pscustomobject]@{ Setting='Local time'; Observed=(Get-AxiosConsoleNested $context @('time','local_time')) }
+            [pscustomobject]@{ Setting='UTC time'; Observed=(Get-AxiosConsoleNested $context @('time','utc_time')) }
+            [pscustomobject]@{ Setting='Time zone'; Observed=(Get-AxiosConsoleNested $context @('time','timezone','Id')) }
+            [pscustomobject]@{ Setting='Synchronization'; Observed=(Get-AxiosConsoleNested $context @('time','synchronization_state')) }
+            [pscustomobject]@{ Setting='Culture'; Observed=(Get-AxiosConsoleNested $context @('locale','culture','Name')) }
+            [pscustomobject]@{ Setting='UI language'; Observed=(Get-AxiosConsoleNested $context @('locale','ui_culture','Name')) }
+            [pscustomobject]@{ Setting='Public profiles'; Observed=(Get-AxiosConsoleNested $context @('network_context','public_profiles')) }
+            [pscustomobject]@{ Setting='Private profiles'; Observed=(Get-AxiosConsoleNested $context @('network_context','private_profiles')) }
         )
     }
-    if (@($LayerResult.findings).Count -gt 0) {
+    $layerFindings = @(Get-AxiosConsoleProperty $LayerResult 'findings' | Where-Object { $null -ne $_ })
+    if ($layerFindings.Count -gt 0) {
         Write-Host 'SECURITY FINDINGS'
-        Write-AxiosConsoleTable @(Get-AxiosConsoleFindingRows @($LayerResult.findings))
+        Write-AxiosConsoleTable @(Get-AxiosConsoleFindingRows $layerFindings)
     } else { Write-Host 'No security finding established within available visibility.' }
-    if (@($LayerResult.context_observations).Count -gt 0) {
+    $layerContext = @(Get-AxiosConsoleProperty $LayerResult 'context_observations' | Where-Object { $null -ne $_ })
+    if ($layerContext.Count -gt 0) {
         Write-Host 'FORENSIC CONTEXT'
-        Write-AxiosConsoleTable @($LayerResult.context_observations | ForEach-Object {
+        Write-AxiosConsoleTable @($layerContext | ForEach-Object {
             [pscustomobject]@{
                 Observation=[string](Get-AxiosConsoleFirst $_ @('title','finding','classification','id') 'Observation')
                 Evidence=(Get-AxiosConsoleValue (Get-AxiosConsoleProperty $_ 'evidence'))
             }
         })
     }
-    $gaps = @(@($LayerResult.collection_errors) + @($LayerResult.reports | Where-Object {
-        $_.success -ne $true -or $_.collection_status -ne 'complete'
-    } | ForEach-Object { '{0}: {1}' -f $_.command,$_.collection_status }))
+    $gaps = @(@(Get-AxiosConsoleProperty $LayerResult 'collection_errors') + @(
+        Get-AxiosConsoleProperty $LayerResult 'reports' | Where-Object {
+            (Get-AxiosConsoleProperty $_ 'success') -ne $true -or
+            (Get-AxiosConsoleProperty $_ 'collection_status') -ne 'complete'
+        } | ForEach-Object {
+            '{0}: {1}' -f (Get-AxiosConsoleProperty $_ 'command'),(Get-AxiosConsoleProperty $_ 'collection_status')
+        }) | Where-Object { $null -ne $_ -and [string]$_ -ne '' })
     if ($gaps.Count -gt 0) {
         Write-Host 'COLLECTION LIMITATIONS'
         Write-AxiosConsoleTable @($gaps | ForEach-Object { [pscustomobject]@{ Reason=[string]$_ } })
@@ -197,19 +209,19 @@ function Write-AxiosTerminalUser {
     param([object]$Manifest, [object]$Network, [object]$Scope, [object]$Exposure,
           [string]$SavedPath = '')
     Write-Host ''
-    Write-Host ("AXIOS USER  {0}" -f ([string]$Manifest.collection_status).ToUpperInvariant())
+    Write-Host ("AXIOS USER  {0}" -f ([string](Get-AxiosConsoleProperty $Manifest 'collection_status')).ToUpperInvariant())
     Write-AxiosConsoleTable @(
-        [pscustomobject]@{ Area = 'Collectors'; Status = 'Completed'; Result = $Manifest.summary.reports_completed }
-        [pscustomobject]@{ Area = 'Security findings'; Status = 'Observed'; Result = $Manifest.summary.findings }
-        [pscustomobject]@{ Area = 'Network posture'; Status = $Network.collection_status; Result = 'Current-user visibility' }
-        [pscustomobject]@{ Area = 'User access scope'; Status = $Scope.collection_status; Result = 'Processes, startup and accessible tasks' }
-        [pscustomobject]@{ Area = 'Exposure assessment'; Status = $Exposure.collection_status; Result = 'Accessible service and task exposure' }
+        [pscustomobject]@{ Area = 'Collectors'; Status = 'Completed'; Result = (Get-AxiosConsoleNested $Manifest @('summary','reports_completed')) }
+        [pscustomobject]@{ Area = 'Security findings'; Status = 'Observed'; Result = (Get-AxiosConsoleNested $Manifest @('summary','findings')) }
+        [pscustomobject]@{ Area = 'Network posture'; Status = (Get-AxiosConsoleProperty $Network 'collection_status'); Result = 'Current-user visibility' }
+        [pscustomobject]@{ Area = 'User access scope'; Status = (Get-AxiosConsoleProperty $Scope 'collection_status'); Result = 'Processes, startup and accessible tasks' }
+        [pscustomobject]@{ Area = 'Exposure assessment'; Status = (Get-AxiosConsoleProperty $Exposure 'collection_status'); Result = 'Accessible service and task exposure' }
     )
     foreach ($section in @(
         [pscustomobject]@{ Name='USER EXECUTION SURFACE'; Report=$Scope },
         [pscustomobject]@{ Name='EXPOSURE COVERAGE'; Report=$Exposure }
     )) {
-        $summary = $section.Report.summary
+        $summary = Get-AxiosConsoleProperty $section.Report 'summary'
         if ($null -eq $summary) { continue }
         $rows = @($summary.PSObject.Properties | Where-Object {
             $_.Name -notin @('success','collection_errors','response_actions') -and
@@ -222,15 +234,16 @@ function Write-AxiosTerminalUser {
             Write-AxiosConsoleTable $rows
         }
     }
-    if (@($Manifest.findings).Count -gt 0) {
+    $userFindings = @(Get-AxiosConsoleProperty $Manifest 'findings' | Where-Object { $null -ne $_ })
+    if ($userFindings.Count -gt 0) {
         Write-Host 'SECURITY FINDINGS'
-        Write-AxiosConsoleTable @(Get-AxiosConsoleFindingRows @($Manifest.findings))
+        Write-AxiosConsoleTable @(Get-AxiosConsoleFindingRows $userFindings)
     } else { Write-Host 'No security finding established within available visibility.' }
     $userGaps = @(
-        @($Manifest.collection_gaps) +
-        @($Scope.collection_errors) +
-        @($Exposure.collection_errors) +
-        @($Network.collection_errors) |
+        @(Get-AxiosConsoleProperty $Manifest 'collection_gaps') +
+        @(Get-AxiosConsoleProperty $Scope 'collection_errors') +
+        @(Get-AxiosConsoleProperty $Exposure 'collection_errors') +
+        @(Get-AxiosConsoleProperty $Network 'collection_errors') |
             Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } |
             Select-Object -Unique
     )
