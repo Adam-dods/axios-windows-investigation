@@ -106,6 +106,22 @@ try {
             context_observations=@([pscustomobject]@{ id='startup-context' });
             collection_errors=@(); summary=[pscustomobject]@{ reports_partial=0; reports_failed=0 }
         }) -ReportData ([ordered]@{})
+
+    $tokens = $null
+    $errors = $null
+    $complete = [System.Management.Automation.Language.Parser]::ParseFile(
+        (Join-Path $root 'installer\windows\Run-AXIOS-Complete-Investigation.ps1'),
+        [ref]$tokens, [ref]$errors
+    )
+    $progressFunction = @($complete.FindAll({ param($node)
+        $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+        $node.Name -eq 'Write-AxiosProgress'
+    }, $true))[0]
+    . ([scriptblock]::Create($progressFunction.ToString()))
+    $progressText = Write-AxiosProgress -Stage 8 -Name 'AXIOS hardware trust' 6>&1 | Out-String
+    if ($progressText -notmatch '8/42' -or $progressText -notmatch '\[[#-]+\]') {
+        throw 'Inline Administrator progress did not render a stage and bar.'
+    }
 }
 finally {
     Remove-Item -LiteralPath $package -Recurse -Force -ErrorAction SilentlyContinue
