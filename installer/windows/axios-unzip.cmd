@@ -18,6 +18,7 @@ $archiveBytes = [Convert]::FromBase64String($payload)
 $stream = New-Object IO.MemoryStream(,$archiveBytes)
 $destination = Join-Path $downloadFolder 'AXIOS'
 $base = [IO.Path]::GetFullPath($destination).TrimEnd('\') + '\'
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = New-Object IO.Compression.ZipArchive($stream, [IO.Compression.ZipArchiveMode]::Read)
 try {
