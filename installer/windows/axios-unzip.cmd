@@ -35,7 +35,8 @@ try {
         $done++
         $percent = [int][Math]::Floor(($done * 100.0) / $total)
         $filled = [int][Math]::Floor(($percent * 24.0) / 100)
-        [Console]::Write("`rAXIOS unzip {0,3}% [{1}{2}]" -f $percent, ('#' * $filled), ('-' * (24 - $filled)))
+        $line = [string]::Format("`rAXIOS unzip {0,3}% [{1}{2}]", $percent, ('#' * $filled), ('-' * (24 - $filled)))
+        [Console]::Write($line)
     }
     [Console]::WriteLine()
 }
