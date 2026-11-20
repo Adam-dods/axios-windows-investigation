@@ -477,7 +477,10 @@ fn build_report(snapshot: &Value) -> Value {
         .into_iter()
         .flatten()
     {
-        if service.get("unquoted_path_with_spaces").and_then(Value::as_bool) == Some(true)
+        if service
+            .get("unquoted_path_with_spaces")
+            .and_then(Value::as_bool)
+            == Some(true)
             && service
                 .get("privileged_execution_context")
                 .and_then(Value::as_bool)
@@ -562,7 +565,10 @@ fn build_report(snapshot: &Value) -> Value {
         .into_iter()
         .flatten()
         .filter(|service| {
-            service.get("unquoted_path_with_spaces").and_then(Value::as_bool) == Some(true)
+            service
+                .get("unquoted_path_with_spaces")
+                .and_then(Value::as_bool)
+                == Some(true)
         })
         .cloned()
         .collect();
@@ -613,7 +619,10 @@ mod tests {
             }]
         }));
         assert_eq!(report["summary"]["findings"], 0);
-        assert_eq!(report["service_exposure"][0]["unquoted_path_with_spaces"], true);
+        assert_eq!(
+            report["unquoted_service_paths"][0]["unquoted_path_with_spaces"],
+            true
+        );
     }
 
     #[test]
