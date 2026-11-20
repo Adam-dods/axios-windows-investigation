@@ -8,11 +8,57 @@ function Write-AxiosConsoleTable {
     Write-Host $text.TrimEnd()
 }
 
+function Get-AxiosConsoleProperty {
+    param([AllowNull()][object]$Item, [string]$Name)
+    if ($null -eq $Item) { return $null }
+    if ($Item -is [System.Collections.IDictionary]) {
+        if ($Item.Contains($Name)) { return $Item[$Name] }
+        return $null
+    }
+    $property = $Item.PSObject.Properties[$Name]
+    if ($null -eq $property) { return $null }
+    return $property.Value
+}
+
+function Get-AxiosConsoleFirst {
+    param([AllowNull()][object]$Item, [string[]]$Names, [string]$Default = '')
+    foreach ($name in $Names) {
+        $value = Get-AxiosConsoleProperty $Item $name
+        if (-not [string]::IsNullOrWhiteSpace([string]$value)) { return $value }
+    }
+    return $Default
+}
+
+function Get-AxiosConsoleFindingRows {
+    param([object[]]$Findings)
+    foreach ($finding in $Findings) {
+        $source = Get-AxiosConsoleValue (Get-AxiosConsoleFirst $finding @('evidence_sources','evidence_source','source'))
+        $details = @()
+        foreach ($key in @('verification_state','status','path','observed_value','endpoint','service_name','process_id')) {
+            $value = Get-AxiosConsoleProperty $finding $key
+            if ($null -ne $value) { $details += ('{0}: {1}' -f ($key -replace '_',' '), (Get-AxiosConsoleValue $value)) }
+        }
+        $evidence = Get-AxiosConsoleProperty $finding 'evidence'
+        if ($null -ne $evidence) { $details += Get-AxiosConsoleValue $evidence }
+        if ($source) { $details += "Source: $source" }
+        [pscustomobject]@{
+            Level=([string](Get-AxiosConsoleFirst $finding @('priority','severity','level') 'review')).ToUpperInvariant()
+            Finding=[string](Get-AxiosConsoleFirst $finding @('title','label','finding','description','id') 'Unlabelled finding')
+            Details=($details | Where-Object { $_ }) -join "`n"
+        }
+    }
+}
+
 function Get-AxiosConsoleValue {
     param([AllowNull()][object]$Value)
     if ($null -eq $Value) { return '' }
     if ($Value -is [bool]) { return $(if ($Value) { 'Yes' } else { 'No' }) }
     if ($Value -is [string] -or $Value -is [ValueType]) { return [string]$Value }
+    if ($Value -is [System.Collections.IDictionary]) {
+        return (@($Value.GetEnumerator() | ForEach-Object {
+            '{0}: {1}' -f ($_.Key -replace '_',' '), (Get-AxiosConsoleValue $_.Value)
+        }) -join '; ')
+    }
     if ($Value -is [System.Collections.IEnumerable]) {
         return (@($Value | ForEach-Object { Get-AxiosConsoleValue $_ }) -join ', ')
     }
@@ -76,20 +122,14 @@ function Write-AxiosTerminalLayer {
     }
     if (@($LayerResult.findings).Count -gt 0) {
         Write-Host 'SECURITY FINDINGS'
-        Write-AxiosConsoleTable @($LayerResult.findings | ForEach-Object {
-            [pscustomobject]@{
-                Level=[string]$_.severity
-                Finding=[string]$_.title
-                Details=(Get-AxiosConsoleValue $_.evidence)
-            }
-        })
+        Write-AxiosConsoleTable @(Get-AxiosConsoleFindingRows @($LayerResult.findings))
     } else { Write-Host 'No security finding established within available visibility.' }
     if (@($LayerResult.context_observations).Count -gt 0) {
         Write-Host 'FORENSIC CONTEXT'
         Write-AxiosConsoleTable @($LayerResult.context_observations | ForEach-Object {
             [pscustomobject]@{
-                Observation=[string]$_.title
-                Evidence=(Get-AxiosConsoleValue $_.evidence)
+                Observation=[string](Get-AxiosConsoleFirst $_ @('title','finding','classification','id') 'Observation')
+                Evidence=(Get-AxiosConsoleValue (Get-AxiosConsoleProperty $_ 'evidence'))
             }
         })
     }
@@ -125,41 +165,14 @@ function Write-AxiosTerminalResults {
         Write-Host 'No important finding established within available visibility.'
     } else {
         Write-Host 'SECURITY FINDINGS'
-        $rows = foreach ($finding in $Findings) {
-            $title = @($finding.title, $finding.label, $finding.finding, $finding.id) |
-                Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } |
-                Select-Object -First 1
-            $source = Get-AxiosConsoleValue $finding.evidence_sources
-            if (-not $source) { $source = Get-AxiosConsoleValue $finding.evidence_source }
-            $details = @()
-            foreach ($key in @('verification_state','status','path','observed_value','endpoint','service_name','process_id')) {
-                $property = $finding.PSObject.Properties[$key]
-                if ($null -ne $property -and $null -ne $property.Value) {
-                    $details += ('{0}: {1}' -f ($key -replace '_',' '), (Get-AxiosConsoleValue $property.Value))
-                }
-            }
-            if ($null -ne $finding.PSObject.Properties['evidence']) {
-                $details += Get-AxiosConsoleValue $finding.evidence
-            }
-            if ($source) { $details += "Source: $source" }
-            $priority = [string]$finding.priority
-            if (-not $priority) { $priority = [string]$finding.severity }
-            if (-not $priority) { $priority = 'review' }
-            [pscustomobject]@{
-                Level = $priority.ToUpperInvariant()
-                Finding = [string]$title
-                Details = ($details | Where-Object { $_ }) -join "`n"
-            }
-        }
-        Write-AxiosConsoleTable @($rows)
+        Write-AxiosConsoleTable @(Get-AxiosConsoleFindingRows $Findings)
     }
     if ($Context.Count -gt 0) {
         Write-Host 'FORENSIC CONTEXT'
         $rows = foreach ($item in $Context) {
             [pscustomobject]@{
-                Observation = [string](@($item.title,$item.finding,$item.classification) |
-                    Where-Object { $_ } | Select-Object -First 1)
-                Evidence = Get-AxiosConsoleValue $item.evidence
+                Observation = [string](Get-AxiosConsoleFirst $item @('title','finding','classification','id') 'Observation')
+                Evidence = Get-AxiosConsoleValue (Get-AxiosConsoleProperty $item 'evidence')
             }
         }
         Write-AxiosConsoleTable @($rows)
@@ -172,8 +185,8 @@ function Write-AxiosTerminalResults {
         Write-Host 'NEXT CHECKS'
         Write-AxiosConsoleTable @($Checks | ForEach-Object {
             [pscustomobject]@{
-                Check = [string](@($_.title,$_.id) | Where-Object { $_ } | Select-Object -First 1)
-                Detail = Get-AxiosConsoleValue $_.reason
+                Check = [string](Get-AxiosConsoleFirst $_ @('title','id') 'Check')
+                Detail = Get-AxiosConsoleValue (Get-AxiosConsoleProperty $_ 'reason')
             }
         })
     }
@@ -211,13 +224,7 @@ function Write-AxiosTerminalUser {
     }
     if (@($Manifest.findings).Count -gt 0) {
         Write-Host 'SECURITY FINDINGS'
-        Write-AxiosConsoleTable @($Manifest.findings | ForEach-Object {
-            [pscustomobject]@{
-                Level = [string]$_.severity
-                Finding = [string]$_.title
-                Details = Get-AxiosConsoleValue $_.evidence
-            }
-        })
+        Write-AxiosConsoleTable @(Get-AxiosConsoleFindingRows @($Manifest.findings))
     } else { Write-Host 'No security finding established within available visibility.' }
     $userGaps = @(
         @($Manifest.collection_gaps) +
@@ -238,13 +245,20 @@ function Write-AxiosTerminalUser {
 
 function Write-AxiosTerminalNetwork {
     param([object]$Report, [string]$Focus, [string]$SavedPath = '')
+    $ipConfiguration = @(Get-AxiosConsoleProperty $Report 'ip_configuration')
+    $firewallProfiles = @(Get-AxiosConsoleProperty $Report 'firewall_profiles')
+    $tcpConnections = @(Get-AxiosConsoleProperty $Report 'tcp_connections')
+    $targets = @(Get-AxiosConsoleProperty $Report 'active_target_results')
+    $findings = @(Get-AxiosConsoleProperty $Report 'findings')
+    $observations = @(Get-AxiosConsoleProperty $Report 'observations')
+    $errors = @(Get-AxiosConsoleProperty $Report 'collection_errors')
     Write-Host ''
     Write-Host ("AXIOS NETWORK - {0}  {1}" -f $Focus.ToUpperInvariant(),
-        ([string]$Report.collection_status).ToUpperInvariant())
+        ([string](Get-AxiosConsoleProperty $Report 'collection_status')).ToUpperInvariant())
     $rows = @(
-        [pscustomobject]@{ Area='Findings'; Observed=@($Report.findings).Count }
-        [pscustomobject]@{ Area='Observations'; Observed=@($Report.observations).Count }
-        [pscustomobject]@{ Area='Collection errors'; Observed=@($Report.collection_errors).Count }
+        [pscustomobject]@{ Area='Findings'; Observed=@($findings | Where-Object { $null -ne $_ }).Count }
+        [pscustomobject]@{ Area='Observations'; Observed=@($observations | Where-Object { $null -ne $_ }).Count }
+        [pscustomobject]@{ Area='Collection errors'; Observed=@($errors | Where-Object { $null -ne $_ }).Count }
     )
     foreach ($name in @('adapters','ip_configuration','firewall_profiles','tcp_connections',
                         'udp_endpoints','routes','neighbors','dns_cache','firewall_rules')) {
@@ -258,19 +272,20 @@ function Write-AxiosTerminalNetwork {
     }
     Write-AxiosConsoleTable $rows
     if ($Focus -in @('overview','wifi','full')) {
-        $interfaces = @($Report.ip_configuration | ForEach-Object {
+        $interfaces = @($ipConfiguration | Where-Object { $null -ne $_ } | ForEach-Object {
             [pscustomobject]@{
-                Interface = [string]$_.interface_alias
-                Address = Get-AxiosConsoleValue $_.ipv4_addresses
-                Gateway = Get-AxiosConsoleValue $_.ipv4_gateways
-                DNS = Get-AxiosConsoleValue $_.dns_servers
+                Interface = [string](Get-AxiosConsoleProperty $_ 'interface_alias')
+                Address = Get-AxiosConsoleValue (Get-AxiosConsoleProperty $_ 'ipv4_addresses')
+                Gateway = Get-AxiosConsoleValue (Get-AxiosConsoleProperty $_ 'ipv4_gateways')
+                DNS = Get-AxiosConsoleValue (Get-AxiosConsoleProperty $_ 'dns_servers')
             }
         })
         if ($interfaces.Count -gt 0) {
             Write-Host 'IP CONFIGURATION'
             Write-AxiosConsoleTable $interfaces
         }
-        $wirelessRows = @($Report.wireless.raw | ForEach-Object {
+        $wireless = Get-AxiosConsoleProperty $Report 'wireless'
+        $wirelessRows = @(Get-AxiosConsoleProperty $wireless 'raw' | Where-Object { $null -ne $_ } | ForEach-Object {
             $line = [string]$_
             if ($line -match '^\s*(SSID|Authentication|Authentification|Cipher|Chiffrement|Signal|RSSI|Band|Bande|Channel|Canal)\s*:\s*(.+)$') {
                 [pscustomobject]@{ Wireless=$Matches[1]; Value=$Matches[2].Trim() }
@@ -281,42 +296,42 @@ function Write-AxiosTerminalNetwork {
             Write-AxiosConsoleTable $wirelessRows
         }
     }
-    if ($Focus -in @('overview','firewall','full') -and @($Report.firewall_profiles).Count -gt 0) {
+    if ($Focus -in @('overview','firewall','full') -and @($firewallProfiles | Where-Object { $null -ne $_ }).Count -gt 0) {
         Write-Host 'FIREWALL PROFILES'
-        Write-AxiosConsoleTable @($Report.firewall_profiles | ForEach-Object {
+        Write-AxiosConsoleTable @($firewallProfiles | ForEach-Object {
             [pscustomobject]@{
-                Profile=$_.Name; Enabled=$_.Enabled;
-                Inbound=$_.DefaultInboundAction; Outbound=$_.DefaultOutboundAction
+                Profile=(Get-AxiosConsoleProperty $_ 'Name'); Enabled=(Get-AxiosConsoleProperty $_ 'Enabled');
+                Inbound=(Get-AxiosConsoleProperty $_ 'DefaultInboundAction'); Outbound=(Get-AxiosConsoleProperty $_ 'DefaultOutboundAction')
             }
         })
     }
     if ($Focus -in @('connections','services')) {
-        $connections = @($Report.tcp_connections)
+        $connections = @($tcpConnections | Where-Object { $null -ne $_ })
         if ($Focus -eq 'services') {
-            $connections = @($connections | Where-Object { $_.state -match '^(?i:listen|listening)$' })
+            $connections = @($connections | Where-Object { (Get-AxiosConsoleProperty $_ 'state') -match '^(?i:listen|listening)$' })
         }
         if ($connections.Count -gt 0) {
             Write-Host 'TCP ENDPOINTS'
             Write-AxiosConsoleTable @($connections | ForEach-Object {
                 [pscustomobject]@{
-                    Local=('{0}:{1}' -f $_.local_address,$_.local_port)
-                    Remote=('{0}:{1}' -f $_.remote_address,$_.remote_port)
-                    State=$_.state; Process=$_.pid
+                    Local=('{0}:{1}' -f (Get-AxiosConsoleProperty $_ 'local_address'),(Get-AxiosConsoleProperty $_ 'local_port'))
+                    Remote=('{0}:{1}' -f (Get-AxiosConsoleProperty $_ 'remote_address'),(Get-AxiosConsoleProperty $_ 'remote_port'))
+                    State=(Get-AxiosConsoleProperty $_ 'state'); Process=(Get-AxiosConsoleProperty $_ 'pid')
                 }
             })
         }
     }
-    if ($Focus -in @('connections','targeted','full') -and @($Report.active_target_results).Count -gt 0) {
+    if ($Focus -in @('connections','targeted','full') -and @($targets | Where-Object { $null -ne $_ }).Count -gt 0) {
         Write-Host 'EXPLICIT TARGET CHECKS'
-        Write-AxiosConsoleTable @($Report.active_target_results | ForEach-Object {
-            [pscustomobject]@{ Target=$_.target; Port=$_.port; State=$_.state;
-                Resolved=$_.resolved_address }
+        Write-AxiosConsoleTable @($targets | ForEach-Object {
+            [pscustomobject]@{ Target=(Get-AxiosConsoleProperty $_ 'target'); Port=(Get-AxiosConsoleProperty $_ 'port');
+                State=(Get-AxiosConsoleProperty $_ 'state'); Resolved=(Get-AxiosConsoleProperty $_ 'resolved_address') }
         })
     }
     if ($Focus -in @('dns','routing')) {
         foreach ($name in $(if ($Focus -eq 'dns') { @('ip_configuration','dns_cache') }
                          else { @('routes','neighbors') })) {
-            $items = @($Report.PSObject.Properties[$name].Value)
+            $items = @(Get-AxiosConsoleProperty $Report $name | Where-Object { $null -ne $_ })
             if ($items.Count -gt 0) {
                 Write-Host (($name -replace '_',' ').ToUpperInvariant())
                 Write-AxiosConsoleTable @($items | ForEach-Object {
@@ -325,23 +340,20 @@ function Write-AxiosTerminalNetwork {
             }
         }
     }
-    if (@($Report.findings).Count -gt 0) {
+    if (@($findings | Where-Object { $null -ne $_ }).Count -gt 0) {
         Write-Host 'SECURITY FINDINGS'
-        Write-AxiosConsoleTable @($Report.findings | ForEach-Object {
-            [pscustomobject]@{ Level=$_.priority; Finding=$_.title;
-                Details=((Get-AxiosConsoleValue $_.evidence) + "`nSource: axios-network-deep-review") }
-        })
+        Write-AxiosConsoleTable @(Get-AxiosConsoleFindingRows $findings)
     } else { Write-Host 'No verified network finding within available visibility.' }
-    if (@($Report.observations).Count -gt 0) {
+    if (@($observations | Where-Object { $null -ne $_ }).Count -gt 0) {
         Write-Host 'NETWORK OBSERVATIONS'
-        Write-AxiosConsoleTable @($Report.observations | ForEach-Object {
-            [pscustomobject]@{ Observation=([string]$_.classification -replace '_',' ');
+        Write-AxiosConsoleTable @($observations | ForEach-Object {
+            [pscustomobject]@{ Observation=([string](Get-AxiosConsoleFirst $_ @('classification','title','id') 'Observation') -replace '_',' ');
                 Detail=Get-AxiosConsoleValue $_ }
         })
     }
-    if (@($Report.collection_errors).Count -gt 0) {
+    if (@($errors | Where-Object { $null -ne $_ }).Count -gt 0) {
         Write-Host 'COLLECTION LIMITATIONS'
-        Write-AxiosConsoleTable @($Report.collection_errors | ForEach-Object {
+        Write-AxiosConsoleTable @($errors | ForEach-Object {
             [pscustomobject]@{ Reason=[string]$_ }
         })
     }

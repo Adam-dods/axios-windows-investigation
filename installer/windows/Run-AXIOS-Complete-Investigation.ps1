@@ -130,9 +130,16 @@ $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 function Write-AxiosProgress {
     param([int]$Stage, [string]$Name)
     # Stages have different durations; this percentage counts completed stages.
-    Write-Progress -Id 1 -Activity "AXIOS Administrator investigation" `
-        -Status ("{0}/42  {1}" -f $Stage, $Name) `
-        -PercentComplete ([int][Math]::Floor((($Stage - 1) / 42.0) * 100))
+    $percent = [int][Math]::Floor((($Stage - 1) / 42.0) * 100)
+    $filled = [int][Math]::Floor(($percent / 100.0) * 24)
+    $bar = ('#' * $filled) + ('-' * (24 - $filled))
+    $label = $Name -replace '^AXIOS ', ''
+    $width = 100
+    try { $width = [Math]::Max(64, [Console]::WindowWidth - 1) } catch {}
+    $prefix = ('AXIOS {0,2}/42 {1,3}% [{2}] ' -f $Stage, $percent, $bar)
+    $available = [Math]::Max(0, $width - $prefix.Length)
+    if ($label.Length -gt $available) { $label = $label.Substring(0, $available) }
+    Write-Host -NoNewline ("`r" + ($prefix + $label).PadRight($width))
 }
 
 function Test-IsAdministrator {
@@ -2028,9 +2035,7 @@ Write-AxiosProgress -Stage 23 -Name "AXIOS network service review"
         [Text.UTF8Encoding]::new($false)
     )
 
-    Write-Progress -Id 1 -Activity "AXIOS Administrator investigation" `
-        -Status "42/42 completed" -PercentComplete 100
-    Write-Progress -Id 1 -Activity "AXIOS Administrator investigation" -Completed
+    Write-Host ("`rAXIOS 42/42 100% [{0}] completed" -f ('#' * 24))
     if ($env:AXIOS_TABLE_OUTPUT -ne "1") {
     Write-Host ""
     $CompleteHeading = "COMPREHENSIVE SECURITY INVESTIGATION"
@@ -2117,7 +2122,7 @@ Write-AxiosProgress -Stage 23 -Name "AXIOS network service review"
     }
 }
 catch {
-    Write-Progress -Id 1 -Activity "AXIOS Administrator investigation" -Completed
+    Write-Host ''
     Write-AxiosText `
         -Path $Failure `
         -Text ($_ | Out-String)

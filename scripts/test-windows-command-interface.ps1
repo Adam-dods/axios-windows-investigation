@@ -32,6 +32,7 @@ try {
     }
 
     . (Join-Path $root 'installer\windows\Write-AXIOS-Terminal-Results.ps1')
+    Set-StrictMode -Version 2.0
     Write-AxiosTerminalResults `
         -Summary ([ordered]@{ overall_status='partial'; confirmed_threats=0 }) `
         -Findings @([pscustomobject]@{
@@ -84,6 +85,27 @@ try {
                 network_context=[pscustomobject]@{ public_profiles=0; private_profiles=1 }
             }
         })
+    # Real collectors do not all emit the same optional finding fields.
+    Write-AxiosTerminalResults `
+        -Summary ([pscustomobject]@{ overall_status='completed'; confirmed_threats=0 }) `
+        -Findings @([pscustomobject]@{ title='Observed configuration'; priority='medium' }) `
+        -Context @([pscustomobject]@{ id='context-only' }) `
+        -Checks @([pscustomobject]@{ id='verify-later' })
+    Write-AxiosTerminalUser `
+        -Manifest ([pscustomobject]@{
+            collection_status='partial'; findings=@([pscustomobject]@{ title='Exposure review'; evidence='Observed' });
+            collection_gaps=@(); summary=[pscustomobject]@{ reports_completed=3; findings=1 }
+        }) `
+        -Network ([pscustomobject]@{ collection_status='partial'; collection_errors=@() }) `
+        -Scope ([pscustomobject]@{ collection_status='complete'; collection_errors=@(); summary=[pscustomobject]@{} }) `
+        -Exposure ([pscustomobject]@{ collection_status='complete'; collection_errors=@(); summary=[pscustomobject]@{} })
+    Write-AxiosTerminalLayer `
+        -LayerResult ([pscustomobject]@{
+            layer='Persistence'; collection_status='complete'; reports=@();
+            findings=@([pscustomobject]@{ title='Autostart review' });
+            context_observations=@([pscustomobject]@{ id='startup-context' });
+            collection_errors=@(); summary=[pscustomobject]@{ reports_partial=0; reports_failed=0 }
+        }) -ReportData ([ordered]@{})
 }
 finally {
     Remove-Item -LiteralPath $package -Recurse -Force -ErrorAction SilentlyContinue
