@@ -2,21 +2,24 @@
 setlocal
 color 07 >nul
 set "AXIOS_INSTALLER_PATH=%~f0"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$source=[IO.File]::ReadAllText($env:AXIOS_INSTALLER_PATH); $marker=':AXIOS_POWERSHELL'; Invoke-Expression $source.Substring($source.LastIndexOf($marker)+$marker.Length)"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$source=[IO.File]::ReadAllText($env:AXIOS_INSTALLER_PATH); $start=$source.LastIndexOf(':AXIOS_POWERSHELL'); $end=$source.LastIndexOf(':AXIOS_ARCHIVE_BASE64'); if($start -lt 0 -or $end -le $start){throw 'The AXIOS package is incomplete.'}; Invoke-Expression $source.Substring($start+':AXIOS_POWERSHELL'.Length,$end-$start-':AXIOS_POWERSHELL'.Length)"
 set "AXIOS_EXIT_CODE=%ERRORLEVEL%"
 if not "%AXIOS_UNZIP_TEST_MODE%"=="1" pause
 exit /b %AXIOS_EXIT_CODE%
 :AXIOS_POWERSHELL
 $ErrorActionPreference = 'Stop'
 $downloadFolder = Split-Path -Parent $env:AXIOS_INSTALLER_PATH
-$zip = Join-Path $downloadFolder 'axios-windows-investigation.zip'
-if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) {
-    throw 'Put axios-unzip.cmd and axios-windows-investigation.zip in the same folder.'
-}
+$source = [IO.File]::ReadAllText($env:AXIOS_INSTALLER_PATH)
+$marker = ':AXIOS_ARCHIVE_BASE64'
+$offset = $source.LastIndexOf($marker)
+if ($offset -lt 0) { throw 'The AXIOS package has no archive.' }
+$payload = $source.Substring($offset + $marker.Length).Replace('::', '')
+$archiveBytes = [Convert]::FromBase64String($payload)
+$stream = New-Object IO.MemoryStream(,$archiveBytes)
 $destination = Join-Path $downloadFolder 'AXIOS'
 $base = [IO.Path]::GetFullPath($destination).TrimEnd('\') + '\'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$archive = [IO.Compression.ZipFile]::OpenRead($zip)
+$archive = New-Object IO.Compression.ZipArchive($stream, [IO.Compression.ZipArchiveMode]::Read)
 try {
     $total = $archive.Entries.Count
     if ($total -eq 0) { throw 'The AXIOS ZIP is empty.' }
@@ -43,6 +46,7 @@ try {
 }
 finally {
     $archive.Dispose()
+    $stream.Dispose()
 }
 $package = Join-Path $destination 'axios-windows-investigation'
 if (-not (Test-Path -LiteralPath (Join-Path $package 'axios.cmd') -PathType Leaf)) {

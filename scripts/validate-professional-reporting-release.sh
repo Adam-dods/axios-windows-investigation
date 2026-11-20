@@ -39,14 +39,14 @@ fi
 
 bash scripts/build-windows-complete-investigation.sh
 
-archive="$({
+package="$({
     find "${AXIOS_OUTPUT_DIR:-$HOME/Downloads}" \
         -maxdepth 1 -type f \
-        -name 'axios-windows-investigation.zip' \
+        -name 'axios-windows-investigation.cmd' \
         -printf '%T@ %p\n'
 } | sort -nr | head -n 1 | cut -d' ' -f2-)"
 
-test -s "$archive"
-sha256sum "$archive"
-echo "NEW_WINDOWS_ARCHIVE=$archive"
+test -s "$package"
+sha256sum "$package"
+echo "NEW_WINDOWS_PACKAGE=$package"
 echo "FINAL_AXIOS_PROFESSIONAL_REPORTING_RELEASE_PASS=true"

@@ -36,20 +36,25 @@ try {
     $null = New-Item -ItemType Directory -Path $archiveRoot -Force
     [IO.File]::WriteAllText((Join-Path $archiveRoot 'axios.cmd'), '@echo off')
     [IO.File]::WriteAllText((Join-Path $archiveRoot 'readme.txt'), 'AXIOS extraction fixture')
-    Copy-Item (Join-Path $root 'installer\windows\axios-unzip.cmd') $unzipFixture
     Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $fixtureZip = Join-Path $unzipFixture 'fixture.zip'
     [IO.Compression.ZipFile]::CreateFromDirectory(
         $archiveRoot,
-        (Join-Path $unzipFixture 'axios-windows-investigation.zip'),
+        $fixtureZip,
         [IO.Compression.CompressionLevel]::Optimal,
         $true
     )
+    $installer = Join-Path $unzipFixture 'axios-windows-investigation.cmd'
+    $template = [IO.File]::ReadAllText((Join-Path $root 'installer\windows\axios-unzip.cmd'))
+    $payload = [Convert]::ToBase64String([IO.File]::ReadAllBytes($fixtureZip))
+    [IO.File]::WriteAllText($installer, ($template + ":AXIOS_ARCHIVE_BASE64`n::" + $payload + "`n"), [Text.Encoding]::ASCII)
+    Remove-Item -LiteralPath $fixtureZip
     $env:AXIOS_UNZIP_TEST_MODE = '1'
     try {
-        $unzipOutput = & (Join-Path $unzipFixture 'axios-unzip.cmd') | Out-String
+        $unzipOutput = & $installer | Out-String
         if ($LASTEXITCODE -ne 0 -or $unzipOutput -notmatch 'AXIOS unzip\s+100%' -or
             -not (Test-Path -LiteralPath (Join-Path $unzipFixture 'AXIOS\axios-windows-investigation\readme.txt'))) {
-            throw 'Double-click extraction helper failed to extract and report 100 percent.'
+            throw 'Self-extracting package failed to extract and report 100 percent.'
         }
     }
     finally {

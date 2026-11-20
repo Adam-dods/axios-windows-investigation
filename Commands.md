@@ -33,28 +33,24 @@ How to extract, start, and use every supported AXIOS investigation mode.
 
 - Windows
 - Windows PowerShell
-- The official `axios-windows-investigation.zip` release package
+- The official `axios-windows-investigation.cmd` release package
 - Administrator PowerShell, **only** for `Administrator` mode
 - Authorization to investigate the system or network target
 
-AXIOS needs **no installation**. The optional `axios-unzip.cmd` helper extracts the package; run `axios.cmd` in CMD or PowerShell afterward. The `axios.ps1` entrypoint remains available for PowerShell.
+AXIOS needs **no installation**. The downloaded file contains the package and extracts it with a progress bar; run `axios.cmd` in CMD or PowerShell afterward. The `axios.ps1` entrypoint remains available for PowerShell.
 
 ---
 
 ## Extract and start
 
-1. Download `axios-windows-investigation.zip` and `axios-unzip.cmd` from the **same GitHub release** into `Downloads`.
-2. Open `axios-unzip.cmd`. It shows inline extraction progress and opens the extracted folder when complete. The ZIP remains in Downloads.
+1. Download the single `axios-windows-investigation.cmd` from the **GitHub release** into `Downloads`.
+2. Open the file. It shows inline extraction progress and opens the extracted folder when complete.
 
-If you prefer manual extraction, open PowerShell and run:
+Or open PowerShell and run this short command from Downloads:
 
 ```powershell
-$Zip  = "$env:USERPROFILE\Downloads\axios-windows-investigation.zip"
-$Root = "$env:USERPROFILE\Downloads\AXIOS"
-
-Expand-Archive -LiteralPath $Zip -DestinationPath $Root -Force
-Set-Location "$Root\axios-windows-investigation"
-
+& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 .\axios.cmd -Mode Help
 ```
 
@@ -525,14 +521,11 @@ Run `Results` in the **same** PowerShell session, or use `-Save` to retain artif
 
 ### Package integrity failure
 
-Re-extract the official ZIP into a clean folder. Never run AXIOS from an incomplete extraction.
+Move the existing `Downloads\AXIOS` folder aside, then extract the official package again. Never run AXIOS from an incomplete extraction.
 
 ```powershell
-$Zip  = "$env:USERPROFILE\Downloads\axios-windows-investigation.zip"
-$Root = "$env:USERPROFILE\Downloads\AXIOS-Clean"
-
-Expand-Archive -LiteralPath $Zip -DestinationPath $Root -Force
-Set-Location "$Root\axios-windows-investigation"
+& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 
 .\axios.ps1 -Mode Help
 ```

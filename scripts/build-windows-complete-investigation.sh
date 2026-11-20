@@ -54,7 +54,7 @@ NAMES=(
   axios-developer-credential-view
 )
 
-for command in cargo file sha256sum zip unzip mktemp; do
+for command in cargo file sha256sum zip unzip mktemp base64 sed; do
   command -v "$command" >/dev/null ||
     { echo "AXIOS_RELEASE_BUILD_ERROR=missing_command:$command"; exit 1; }
 done
@@ -76,9 +76,8 @@ TEMP_DIR="$(mktemp -d)"
 PACKAGE_NAME="axios-windows-investigation"
 ROOT="$TEMP_DIR/$PACKAGE_NAME"
 BIN="$ROOT/bin"
-OUT="$OUTPUT_DIR/$PACKAGE_NAME.zip"
+OUT="$OUTPUT_DIR/$PACKAGE_NAME.cmd"
 ARCHIVE="$TEMP_DIR/$PACKAGE_NAME.zip"
-UNZIP_HELPER="$OUTPUT_DIR/axios-unzip.cmd"
 
 cleanup() {
   rm -rf "$TEMP_DIR"
@@ -168,10 +167,13 @@ fi
 )
 
 unzip -t "$ARCHIVE" >/dev/null
-mv -f "$ARCHIVE" "$OUT"
-cp "$PROJECT_ROOT/installer/windows/axios-unzip.cmd" "$UNZIP_HELPER"
+{
+  cat "$PROJECT_ROOT/installer/windows/axios-unzip.cmd"
+  printf ':AXIOS_ARCHIVE_BASE64\n'
+  base64 "$ARCHIVE" | sed 's/^/::/'
+} > "$TEMP_DIR/$PACKAGE_NAME.cmd"
+mv -f "$TEMP_DIR/$PACKAGE_NAME.cmd" "$OUT"
 
 echo "AXIOS_RELEASE_BUILD_PASS=true"
 echo "BINARIES_PACKAGED=${#NAMES[@]}"
-echo "ZIP=$OUT"
-echo "UNZIP_HELPER=$UNZIP_HELPER"
+echo "SELF_EXTRACTING_PACKAGE=$OUT"
