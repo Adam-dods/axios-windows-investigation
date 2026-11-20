@@ -196,9 +196,14 @@ function Write-AxiosTerminalResults {
     if ($Checks.Count -gt 0) {
         Write-Host 'NEXT CHECKS'
         Write-AxiosConsoleTable @($Checks | ForEach-Object {
+            $id = [string](Get-AxiosConsoleProperty $_ 'id')
+            $label = [string](Get-AxiosConsoleFirst $_ @('title') '')
+            if (-not $label) {
+                $label = $id -replace '^check\.', '' -replace '^[^.]+\.', '' -replace '_', ' '
+            }
             [pscustomobject]@{
-                Check = [string](Get-AxiosConsoleFirst $_ @('title','id') 'Check')
-                Detail = Get-AxiosConsoleValue (Get-AxiosConsoleProperty $_ 'reason')
+                Check = $label
+                Detail = [string](Get-AxiosConsoleFirst $_ @('action','reason','description') 'No action supplied')
             }
         })
     }

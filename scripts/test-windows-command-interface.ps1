@@ -86,11 +86,18 @@ try {
             }
         })
     # Real collectors do not all emit the same optional finding fields.
-    Write-AxiosTerminalResults `
+    $nextChecksOutput = Write-AxiosTerminalResults `
         -Summary ([pscustomobject]@{ overall_status='completed'; confirmed_threats=0 }) `
         -Findings @([pscustomobject]@{ title='Observed configuration'; priority='medium' }) `
         -Context @([pscustomobject]@{ id='context-only' }) `
-        -Checks @([pscustomobject]@{ id='verify-later' })
+        -Checks @([pscustomobject]@{
+            id='check.security.defender_user_writable_exclusion_requires_review';
+            action='Review exact excluded path'
+        }) 6>&1 | Out-String
+    if ($nextChecksOutput -notmatch 'Review exact excluded path' -or
+        $nextChecksOutput -match 'check.security.defender_user_writable') {
+        throw 'Next checks did not display the actionable text.'
+    }
     Write-AxiosTerminalUser `
         -Manifest ([pscustomobject]@{
             collection_status='partial'; findings=@([pscustomobject]@{ title='Exposure review'; evidence='Observed' });
