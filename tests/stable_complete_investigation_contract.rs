@@ -90,7 +90,9 @@ fn console_complete_hides_temporary_paths_and_machine_receipt() {
 
 #[test]
 fn complete_progress_numbers_every_collector() {
-    assert!(COMPLETE.contains("Write-AxiosProgress -Stage 31 -Name \"AXIOS Defender evidence review\""));
+    assert!(
+        COMPLETE.contains("Write-AxiosProgress -Stage 31 -Name \"AXIOS Defender evidence review\"")
+    );
     assert!(COMPLETE.contains("Write-AxiosProgress -Stage 32 -Name \"AXIOS collection integrity and contradiction review\""));
     assert!(COMPLETE.contains("Write-AxiosProgress -Stage 42"));
     assert!(!COMPLETE.contains("/40]"));

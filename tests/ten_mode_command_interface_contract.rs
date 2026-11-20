@@ -28,13 +28,7 @@ fn launcher_exposes_seven_main_help_and_three_hidden_developer_modes() {
         assert!(COMMANDS.contains(&format!("-Focus {focus}")));
     }
 
-    for public_mode in [
-        "Help",
-        "User",
-        "Administrator",
-        "Network",
-        "Results",
-    ] {
+    for public_mode in ["Help", "User", "Administrator", "Network", "Results"] {
         assert!(
             COMMANDS.contains(&format!("-Mode {public_mode}")),
             "command documentation is missing mode {public_mode}"

@@ -213,17 +213,25 @@ fn decrypt_saved_credential() -> Result<()> {
     println!();
     print_heading("PRIVATE NETWORK CREDENTIAL ACCESS");
 
-    let display_rows: Vec<(String, String)> = fields.iter().map(|(name, value)| {
-        let display = match value {
-            serde_json::Value::String(text) => text.clone(),
-            serde_json::Value::Null => "Not available".to_string(),
-            other => other.to_string(),
-        };
-        (name.to_string(), display)
-    }).collect();
+    let display_rows: Vec<(String, String)> = fields
+        .iter()
+        .map(|(name, value)| {
+            let display = match value {
+                serde_json::Value::String(text) => text.clone(),
+                serde_json::Value::Null => "Not available".to_string(),
+                other => other.to_string(),
+            };
+            (name.to_string(), display)
+        })
+        .collect();
     println!("{:<22}  {}", "Field", "Decrypted value");
-    println!("{:<22}  {}", "----------------------", "-----------------------------");
-    for (name, display) in &display_rows { println!("{name:<22}  {display}"); }
+    println!(
+        "{:<22}  {}",
+        "----------------------", "-----------------------------"
+    );
+    for (name, display) in &display_rows {
+        println!("{name:<22}  {display}");
+    }
 
     println!("Decryption status      : authenticated");
     println!("Plaintext file created : no");
@@ -263,7 +271,10 @@ fn decrypt_file(path: &PathBuf, password: &[u8]) -> Result<Vec<u8>> {
 #[cfg(windows)]
 fn print_table(rows: &[(&str, &str)]) {
     println!("{:<22}  {}", "Field", "Value");
-    println!("{:<22}  {}", "----------------------", "-----------------------------");
+    println!(
+        "{:<22}  {}",
+        "----------------------", "-----------------------------"
+    );
     for (name, value) in rows {
         println!("{name:<22}  {value}");
     }
