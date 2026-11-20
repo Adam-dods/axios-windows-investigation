@@ -59,6 +59,29 @@ try {
         throw 'Self-extracting package failed to extract and report 100 percent.'
     }
 
+    # Execute the embedded Administrator ACL collector function on Windows.
+    # Parsing its Rust string alone cannot catch runtime SwitchParameter errors.
+    $adminSource = [IO.File]::ReadAllText((Join-Path $root 'src\bin\axios-admin-exposure-audit.rs'))
+    $aclStart = $adminSource.IndexOf('function Get-AxiosFileAclAssessment {')
+    if ($aclStart -lt 0) { throw 'Administrator ACL assessment function is missing.' }
+    $aclEnd = $adminSource.IndexOf('function Get-AxiosRegistryAclAssessment {', $aclStart)
+    if ($aclEnd -le $aclStart) {
+        throw 'Administrator ACL assessment function has no end marker.'
+    }
+    . ([scriptblock]::Create($adminSource.Substring($aclStart, $aclEnd - $aclStart)))
+    $fileAclCache = @{}
+    $lowPrivilegeSids = @()
+    function Get-AxiosIdentitySid { param([object]$IdentityReference) return 'fixture-sid' }
+    function Add-AxiosCollectionError { param($Source, $Failure) throw ("{0}: {1}" -f $Source, $Failure) }
+    $aclFixture = Join-Path $package 'acl-fixture'
+    $null = New-Item -ItemType Directory -Path $aclFixture
+    $aclGeneral = Get-AxiosFileAclAssessment $aclFixture 'fixture:general'
+    $aclCreate = Get-AxiosFileAclAssessment $aclFixture 'fixture:create' -RequireCreateFile
+    if ($aclGeneral.status -ne 'observed' -or $aclCreate.status -ne 'observed' -or
+        $fileAclCache.Count -ne 2) {
+        throw 'Administrator ACL assessment must evaluate both permission modes independently.'
+    }
+
     . (Join-Path $root 'installer\windows\Write-AXIOS-Terminal-Results.ps1')
     Set-StrictMode -Version 2.0
     $priorityOnly = [pscustomobject]@{ priority='high'; title='User exposure' }

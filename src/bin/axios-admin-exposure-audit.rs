@@ -357,7 +357,7 @@ function Get-AxiosFileAclAssessment {
     }
 
     $expanded = [Environment]::ExpandEnvironmentVariables($Path).Trim('"')
-    $key = ('{0}:{1}' -f [int]$RequireCreateFile, $expanded.ToLowerInvariant())
+    $key = ('{0}:{1}' -f $RequireCreateFile.IsPresent, $expanded.ToLowerInvariant())
     if ($fileAclCache.ContainsKey($key)) {
         return $fileAclCache[$key]
     }
