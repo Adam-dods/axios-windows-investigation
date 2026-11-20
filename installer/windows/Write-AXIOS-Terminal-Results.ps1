@@ -137,9 +137,17 @@ function Write-AxiosTerminalUser {
             }
         })
     } else { Write-Host 'No security finding established within available visibility.' }
-    if (@($Manifest.collection_gaps).Count -gt 0) {
+    $userGaps = @(
+        @($Manifest.collection_gaps) +
+        @($Scope.collection_errors) +
+        @($Exposure.collection_errors) +
+        @($Network.collection_errors) |
+            Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } |
+            Select-Object -Unique
+    )
+    if ($userGaps.Count -gt 0) {
         Write-Host 'COLLECTION LIMITATIONS'
-        Write-AxiosConsoleTable @($Manifest.collection_gaps | ForEach-Object {
+        Write-AxiosConsoleTable @($userGaps | ForEach-Object {
             [pscustomobject]@{ Reason = [string]$_ }
         })
     }
