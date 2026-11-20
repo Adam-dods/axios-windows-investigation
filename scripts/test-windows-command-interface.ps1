@@ -33,6 +33,16 @@ try {
 
     . (Join-Path $root 'installer\windows\Write-AXIOS-Terminal-Results.ps1')
     Set-StrictMode -Version 2.0
+    $priorityOnly = [pscustomobject]@{ priority='high'; title='User exposure' }
+    $severityOnly = [pscustomobject]@{ severity='medium'; title='Control review' }
+    if ((Get-AxiosConsolePriority $priorityOnly) -ne 'high' -or
+        (Get-AxiosConsolePriority $severityOnly) -ne 'medium') {
+        throw 'Developer findings require optional priority and severity support.'
+    }
+    $exposureSource = Get-Content -LiteralPath (Join-Path $root 'installer\windows\Run-AXIOS-Developer-Exposure-View.ps1') -Raw
+    if ($exposureSource -match '\$_\.severity') {
+        throw 'Developer exposure accesses optional severity directly under StrictMode.'
+    }
     Write-AxiosTerminalResults `
         -Summary ([ordered]@{ overall_status='partial'; confirmed_threats=0 }) `
         -Findings @([pscustomobject]@{

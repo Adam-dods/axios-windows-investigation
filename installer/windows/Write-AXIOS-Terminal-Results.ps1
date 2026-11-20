@@ -35,6 +35,11 @@ function Get-AxiosConsoleNested {
     return $Item
 }
 
+function Get-AxiosConsolePriority {
+    param([AllowNull()][object]$Item)
+    return [string](Get-AxiosConsoleFirst $Item @('priority','severity','level') 'review')
+}
+
 function Get-AxiosConsoleFindingRows {
     param([object[]]$Findings)
     foreach ($finding in $Findings) {
@@ -48,7 +53,7 @@ function Get-AxiosConsoleFindingRows {
         if ($null -ne $evidence) { $details += Get-AxiosConsoleValue $evidence }
         if ($source) { $details += "Source: $source" }
         [pscustomobject]@{
-            Level=([string](Get-AxiosConsoleFirst $finding @('priority','severity','level') 'review')).ToUpperInvariant()
+            Level=(Get-AxiosConsolePriority $finding).ToUpperInvariant()
             Finding=[string](Get-AxiosConsoleFirst $finding @('title','label','finding','description','id') 'Unlabelled finding')
             Details=($details | Where-Object { $_ }) -join "`n"
         }

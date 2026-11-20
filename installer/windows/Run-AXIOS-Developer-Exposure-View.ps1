@@ -680,10 +680,10 @@ try {
     if ($env:AXIOS_TABLE_OUTPUT -eq "1") {
         . (Join-Path $PSScriptRoot "Write-AXIOS-Terminal-Results.ps1")
         $Important = @($Result.findings | Where-Object {
-            $_.severity -in @('high','medium') -or $_.priority -in @('high','medium')
+            (Get-AxiosConsolePriority $_) -in @('high','medium')
         })
         $Other = @($Result.findings | Where-Object {
-            $_.severity -notin @('high','medium') -and $_.priority -notin @('high','medium')
+            (Get-AxiosConsolePriority $_) -notin @('high','medium')
         })
         $DisplaySummary = [PSCustomObject]@{
             overall_status = $Result.collection_status
