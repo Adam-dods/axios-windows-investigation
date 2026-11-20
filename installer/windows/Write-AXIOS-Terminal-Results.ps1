@@ -60,6 +60,20 @@ function Write-AxiosTerminalLayer {
             Write-AxiosConsoleTable $rows
         }
     }
+    if ($name -eq 'Context' -and $null -ne $ReportData['context-posture']) {
+        $context = $ReportData['context-posture']
+        Write-Host 'TIME, LANGUAGE AND NETWORK CONTEXT'
+        Write-AxiosConsoleTable @(
+            [pscustomobject]@{ Setting='Local time'; Observed=$context.time.local_time }
+            [pscustomobject]@{ Setting='UTC time'; Observed=$context.time.utc_time }
+            [pscustomobject]@{ Setting='Time zone'; Observed=$context.time.timezone.Id }
+            [pscustomobject]@{ Setting='Synchronization'; Observed=$context.time.synchronization_state }
+            [pscustomobject]@{ Setting='Culture'; Observed=$context.locale.culture.Name }
+            [pscustomobject]@{ Setting='UI language'; Observed=$context.locale.ui_culture.Name }
+            [pscustomobject]@{ Setting='Public profiles'; Observed=$context.network_context.public_profiles }
+            [pscustomobject]@{ Setting='Private profiles'; Observed=$context.network_context.private_profiles }
+        )
+    }
     if (@($LayerResult.findings).Count -gt 0) {
         Write-Host 'SECURITY FINDINGS'
         Write-AxiosConsoleTable @($LayerResult.findings | ForEach-Object {
@@ -292,7 +306,7 @@ function Write-AxiosTerminalNetwork {
             })
         }
     }
-    if ($Focus -eq 'targeted' -and @($Report.active_target_results).Count -gt 0) {
+    if ($Focus -in @('connections','targeted','full') -and @($Report.active_target_results).Count -gt 0) {
         Write-Host 'EXPLICIT TARGET CHECKS'
         Write-AxiosConsoleTable @($Report.active_target_results | ForEach-Object {
             [pscustomobject]@{ Target=$_.target; Port=$_.port; State=$_.state;

@@ -71,6 +71,19 @@ try {
         -ReportData ([ordered]@{
             updates=[pscustomobject]@{ summary=[pscustomobject]@{ pending_software_update_count=2 } }
         })
+    Write-AxiosTerminalLayer `
+        -LayerResult ([pscustomobject]@{
+            layer='Context'; collection_status='complete'; reports=@(); findings=@();
+            context_observations=@(); collection_errors=@();
+            summary=[pscustomobject]@{ reports_partial=0; reports_failed=0 }
+        }) `
+        -ReportData ([ordered]@{
+            'context-posture'=[pscustomobject]@{
+                time=[pscustomobject]@{ local_time='today'; utc_time='today'; synchronization_state='unknown'; timezone=[pscustomobject]@{ Id='UTC' } };
+                locale=[pscustomobject]@{ culture=[pscustomobject]@{ Name='en-US' }; ui_culture=[pscustomobject]@{ Name='en-US' } };
+                network_context=[pscustomobject]@{ public_profiles=0; private_profiles=1 }
+            }
+        })
 }
 finally {
     Remove-Item -LiteralPath $package -Recurse -Force -ErrorAction SilentlyContinue
