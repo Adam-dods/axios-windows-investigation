@@ -84,6 +84,14 @@ try {
 
     . (Join-Path $root 'installer\windows\Write-AXIOS-Terminal-Results.ps1')
     Set-StrictMode -Version 2.0
+    $unlabelledContext = [pscustomobject]@{ classification='context'; evidence=$null }
+    if ((Get-AxiosConsoleObservationTitle $unlabelledContext) -ne 'Context record without a description') {
+        throw 'An unlabelled context observation must not render as a bare context row.'
+    }
+    $describedContext = [pscustomobject]@{ classification='context'; reason='Source visibility limited' }
+    if ((Get-AxiosConsoleObservationTitle $describedContext) -ne 'Source visibility limited') {
+        throw 'A descriptive context reason must be shown in the table.'
+    }
     $priorityOnly = [pscustomobject]@{ priority='high'; title='User exposure' }
     $severityOnly = [pscustomobject]@{ severity='medium'; title='Control review' }
     if ((Get-AxiosConsolePriority $priorityOnly) -ne 'high' -or

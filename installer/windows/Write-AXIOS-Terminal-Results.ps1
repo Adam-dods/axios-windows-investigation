@@ -40,6 +40,20 @@ function Get-AxiosConsolePriority {
     return [string](Get-AxiosConsoleFirst $Item @('priority','severity','level') 'review')
 }
 
+function Get-AxiosConsoleObservationTitle {
+    param([AllowNull()][object]$Item)
+    foreach ($name in @('reason','description','message','title','label','finding','name','id','classification')) {
+        $candidate = [string](Get-AxiosConsoleProperty $Item $name)
+        $normalized = ($candidate -replace '_',' ' -replace '\s+',' ').Trim().ToLowerInvariant()
+        if ($normalized -and $normalized -notin @('context','informational','information','observation')) {
+            return $candidate
+        }
+    }
+    $collector = [string](Get-AxiosConsoleProperty $Item 'collector')
+    if ($collector) { return ('Context from {0} (no description supplied)' -f $collector) }
+    return 'Context record without a description'
+}
+
 function Get-AxiosConsoleFindingRows {
     param([object[]]$Findings)
     foreach ($finding in $Findings) {
@@ -141,7 +155,7 @@ function Write-AxiosTerminalLayer {
         Write-Host 'FORENSIC CONTEXT'
         Write-AxiosConsoleTable @($layerContext | ForEach-Object {
             [pscustomobject]@{
-                Observation=[string](Get-AxiosConsoleFirst $_ @('title','finding','classification','id') 'Observation')
+                Observation=Get-AxiosConsoleObservationTitle $_
                 Evidence=(Get-AxiosConsoleValue (Get-AxiosConsoleProperty $_ 'evidence'))
             }
         })
@@ -188,7 +202,7 @@ function Write-AxiosTerminalResults {
         Write-Host 'FORENSIC CONTEXT'
         $rows = foreach ($item in $Context) {
             [pscustomobject]@{
-                Observation = [string](Get-AxiosConsoleFirst $item @('title','finding','classification','id') 'Observation')
+                Observation = Get-AxiosConsoleObservationTitle $item
                 Evidence = Get-AxiosConsoleValue (Get-AxiosConsoleProperty $item 'evidence')
             }
         }

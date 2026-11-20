@@ -140,6 +140,8 @@ cp "$PROJECT_ROOT/installer/windows/AXIOS-COMMANDS.txt" \
   "$ROOT/AXIOS-COMMANDS.txt"
 
 cp "$PROJECT_ROOT/README.md" "$ROOT/README.md"
+cp "$PROJECT_ROOT/Commands.md" "$ROOT/Commands.md"
+cp "$PROJECT_ROOT/Changelog.md" "$ROOT/Changelog.md"
 cp "$PROJECT_ROOT/LICENSE" "$ROOT/LICENSE"
 
 UNIX_HOME_PREFIX="/""home/"
@@ -157,6 +159,8 @@ fi
     scripts/*.ps1 \
     AXIOS-COMMANDS.txt \
     README.md \
+    Commands.md \
+    Changelog.md \
     LICENSE \
     > SHA256SUMS.txt
 )
