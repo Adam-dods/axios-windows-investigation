@@ -53,6 +53,16 @@ fn administrator_exposure_audit_is_precise_cached_and_localization_safe() {
     assert!(source.contains("unquoted_service_path_writable_candidate"));
     assert!(source.contains("$executablePath -match '\\s'"));
     assert!(source.contains("parent_potential_broad_write"));
+    assert!(source.contains("-RequireCreateFile"));
+    let candidate_acl = source
+        .split("if ($RequireCreateFile) {")
+        .nth(1)
+        .expect("candidate parent ACL check should be separate")
+        .split("else {")
+        .next()
+        .expect("candidate parent ACL branch should exist");
+    assert!(candidate_acl.contains("FileSystemRights]::WriteData"));
+    assert!(!candidate_acl.contains("FileSystemRights]::AppendData"));
     assert!(source.contains("allow_and_deny_evaluated = $true"));
     assert!(source.contains("file_acl_cache_entries"));
     assert!(source.contains("total_ms = $totalTimer.ElapsedMilliseconds"));
