@@ -59,6 +59,18 @@ try {
         -Network ([pscustomobject]@{ collection_status='complete' }) `
         -Scope ([pscustomobject]@{ collection_status='complete'; summary=[pscustomobject]@{ user_autoruns=0 } }) `
         -Exposure ([pscustomobject]@{ collection_status='complete'; summary=[pscustomobject]@{ services=0 } })
+    Write-AxiosTerminalLayer `
+        -LayerResult ([pscustomobject]@{
+            layer='Software'; collection_status='partial';
+            reports=@([pscustomobject]@{
+                command='updates'; success=$true; collection_status='partial';
+                findings=0; context_observations=0; collection_errors=1
+            }); findings=@(); context_observations=@(); collection_errors=@('Date unavailable');
+            summary=[pscustomobject]@{ reports_partial=1; reports_failed=0 }
+        }) `
+        -ReportData ([ordered]@{
+            updates=[pscustomobject]@{ summary=[pscustomobject]@{ pending_software_update_count=2 } }
+        })
 }
 finally {
     Remove-Item -LiteralPath $package -Recurse -Force -ErrorAction SilentlyContinue

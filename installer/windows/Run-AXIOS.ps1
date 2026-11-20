@@ -540,7 +540,7 @@ NETWORK FOCUS
 .\axios.cmd -Mode Network -NetworkFocus routing
 .\axios.cmd -Mode Network -NetworkFocus firewall
 .\axios.cmd -Mode Network -NetworkFocus full
-.\axios.cmd -Mode Network -NetworkFocus targeted -Target 127.0.0.1 -Ports 80
+.\axios.cmd -Mode Network -NetworkFocus connections -Target 127.0.0.1 -Ports 80
 
 OTHER
 .\axios.cmd -Mode Administrator -AuditMode smart -MaxFiles 5000

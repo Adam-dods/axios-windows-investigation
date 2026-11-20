@@ -21,6 +21,74 @@ function Get-AxiosConsoleValue {
     }) -join '; ')
 }
 
+function Write-AxiosTerminalLayer {
+    param([object]$LayerResult, [System.Collections.IDictionary]$ReportData,
+          [string]$SavedPath = '')
+    $name = [string]$LayerResult.layer
+    Write-Host ''
+    Write-Host ('AXIOS {0}  {1}' -f $name.ToUpperInvariant(),
+        ([string]$LayerResult.collection_status).ToUpperInvariant())
+    Write-AxiosConsoleTable @(
+        [pscustomobject]@{ Area='Reports'; Result=@($LayerResult.reports).Count }
+        [pscustomobject]@{ Area='Partial reports'; Result=$LayerResult.summary.reports_partial }
+        [pscustomobject]@{ Area='Failed reports'; Result=$LayerResult.summary.reports_failed }
+        [pscustomobject]@{ Area='Security findings'; Result=@($LayerResult.findings).Count }
+        [pscustomobject]@{ Area='Context observations'; Result=@($LayerResult.context_observations).Count }
+    )
+    Write-Host 'ASSESSMENT COVERAGE'
+    Write-AxiosConsoleTable @($LayerResult.reports | ForEach-Object {
+        [pscustomobject]@{
+            Collector=[string]$_.command
+            Status=[string]$_.collection_status
+            Findings=$_.findings
+            Context=$_.context_observations
+            Errors=$_.collection_errors
+        }
+    })
+    foreach ($entry in $ReportData.GetEnumerator()) {
+        $report = $entry.Value
+        if ($null -eq $report) { continue }
+        $summary = $report.summary
+        if ($null -eq $summary) { continue }
+        $rows = @($summary.PSObject.Properties | Where-Object {
+            $null -ne $_.Value -and ($_.Value -is [string] -or $_.Value -is [ValueType])
+        } | ForEach-Object {
+            [pscustomobject]@{ Measure=($_.Name -replace '_',' '); Observed=$_.Value }
+        })
+        if ($rows.Count -gt 0) {
+            Write-Host (([string]$entry.Key -replace '-',' ').ToUpperInvariant())
+            Write-AxiosConsoleTable $rows
+        }
+    }
+    if (@($LayerResult.findings).Count -gt 0) {
+        Write-Host 'SECURITY FINDINGS'
+        Write-AxiosConsoleTable @($LayerResult.findings | ForEach-Object {
+            [pscustomobject]@{
+                Level=[string]$_.severity
+                Finding=[string]$_.title
+                Details=(Get-AxiosConsoleValue $_.evidence)
+            }
+        })
+    } else { Write-Host 'No security finding established within available visibility.' }
+    if (@($LayerResult.context_observations).Count -gt 0) {
+        Write-Host 'FORENSIC CONTEXT'
+        Write-AxiosConsoleTable @($LayerResult.context_observations | ForEach-Object {
+            [pscustomobject]@{
+                Observation=[string]$_.title
+                Evidence=(Get-AxiosConsoleValue $_.evidence)
+            }
+        })
+    }
+    $gaps = @(@($LayerResult.collection_errors) + @($LayerResult.reports | Where-Object {
+        $_.success -ne $true -or $_.collection_status -ne 'complete'
+    } | ForEach-Object { '{0}: {1}' -f $_.command,$_.collection_status }))
+    if ($gaps.Count -gt 0) {
+        Write-Host 'COLLECTION LIMITATIONS'
+        Write-AxiosConsoleTable @($gaps | ForEach-Object { [pscustomobject]@{ Reason=[string]$_ } })
+    }
+    if ($SavedPath) { Write-Host ('Saved result: {0}' -f $SavedPath) }
+}
+
 function Write-AxiosTerminalResults {
     param(
         [Parameter(Mandatory)][object]$Summary,
