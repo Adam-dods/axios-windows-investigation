@@ -212,6 +212,33 @@ function Get-AxiosPotentialWriteAcl {{
     }}
 }}
 
+function Get-AxiosWritableUnquotedCandidates {{
+    param([string]$ExecutablePath)
+
+    if ([string]::IsNullOrWhiteSpace($ExecutablePath)) {{
+        return @()
+    }}
+
+    $items = [System.Collections.Generic.List[object]]::new()
+    for ($index = 0; $index -lt $ExecutablePath.Length; $index++) {{
+        if (-not [char]::IsWhiteSpace($ExecutablePath[$index])) {{
+            continue
+        }}
+
+        $candidate = $ExecutablePath.Substring(0, $index) + '.exe'
+        $parent = Split-Path -Parent $candidate
+        $rules = @(Get-AxiosPotentialWriteAcl $parent)
+        if ($rules.Count -gt 0) {{
+            $items.Add([PSCustomObject]@{{
+                candidate = $candidate
+                parent = $parent
+                parent_broad_write_acl = $rules
+            }})
+        }}
+    }}
+    return @($items)
+}}
+
 $operatingSystem = Invoke-AxiosExposureSource 'operating_system' {{
     $os = Get-AxiosManagementInstance "Win32_OperatingSystem"
     $version = Get-ItemProperty `
@@ -279,7 +306,7 @@ $privileges = @(
 $allServices = @(
     Invoke-AxiosExposureSource 'services' {{
         Get-AxiosManagementInstance "Win32_Service" |
-            Select-Object Name, DisplayName, StartMode, State, PathName |
+            Select-Object Name, DisplayName, StartMode, State, StartName, PathName |
             Sort-Object Name
     }} @()
 )
@@ -297,15 +324,22 @@ $serviceExposure = @(
                 -not $commandLine.TrimStart().StartsWith('"') -and
                 $executablePath.Contains(' ')
             )
+            $privileged = [string]$service.StartName -match '(?i)^(NT AUTHORITY\\SYSTEM|SYSTEM|LocalSystem|NT AUTHORITY\\(LocalService|NetworkService)|LocalService|NetworkService)$'
+            $writableCandidates = if ($unquotedWithSpaces -and $privileged) {{
+                @(Get-AxiosWritableUnquotedCandidates $executablePath)
+            }} else {{ @() }}
 
             [PSCustomObject]@{{
                 name = $service.Name
                 display_name = $service.DisplayName
                 start_mode = $service.StartMode
                 state = $service.State
+                start_name = $service.StartName
+                privileged_execution_context = $privileged
                 command_line = $commandLine
                 executable_path = $executablePath
                 unquoted_path_with_spaces = $unquotedWithSpaces
+                writable_interpretation_candidates = $writableCandidates
                 broad_write_acl = @(Get-AxiosPotentialWriteAcl $executablePath)
             }}
         }}
@@ -443,17 +477,22 @@ fn build_report(snapshot: &Value) -> Value {
         .into_iter()
         .flatten()
     {
-        if service
-            .get("unquoted_path_with_spaces")
-            .and_then(Value::as_bool)
-            == Some(true)
+        if service.get("unquoted_path_with_spaces").and_then(Value::as_bool) == Some(true)
+            && service
+                .get("privileged_execution_context")
+                .and_then(Value::as_bool)
+                == Some(true)
+            && service
+                .get("writable_interpretation_candidates")
+                .and_then(Value::as_array)
+                .is_some_and(|items| !items.is_empty())
         {
             findings.push(json!({
                 "priority": "high",
                 "classification": "privilege_escalation_exposure",
-                "title": "Service command path is unquoted and contains spaces",
+                "title": "Privileged unquoted service path has a potentially writable interpretation candidate",
                 "evidence": service,
-                "next_check": "Verify the service executable path, directory permissions, and whether an unprivileged principal can create files in any interpreted path segment."
+                "next_check": "Confirm effective create/write access on the reported candidate parent before remediation."
             }));
         }
 
@@ -517,6 +556,17 @@ fn build_report(snapshot: &Value) -> Value {
     }
 
     findings.truncate(200);
+    let unquoted_service_paths: Vec<_> = snapshot
+        .get("service_exposure")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter(|service| {
+            service.get("unquoted_path_with_spaces").and_then(Value::as_bool) == Some(true)
+        })
+        .cloned()
+        .collect();
+    let unquoted_service_count = unquoted_service_paths.len();
 
     json!({
         "success": true,
@@ -534,7 +584,9 @@ fn build_report(snapshot: &Value) -> Value {
         "installed_hotfixes": snapshot.get("installed_hotfixes").cloned().unwrap_or_else(|| json!([])),
         "uac": snapshot.get("uac").cloned().unwrap_or(Value::Null),
         "token_privileges": snapshot.get("token_privileges").cloned().unwrap_or_else(|| json!([])),
+        "unquoted_service_paths": unquoted_service_paths,
         "summary": {
+            "unquoted_service_paths": unquoted_service_count,
             "service_exposure_items": snapshot.get("service_exposure").and_then(Value::as_array).map_or(0, Vec::len),
             "scheduled_task_exposure_items": snapshot.get("scheduled_task_exposure").and_then(Value::as_array).map_or(0, Vec::len),
             "machine_path_exposure_items": snapshot.get("machine_path_exposure").and_then(Value::as_array).map_or(0, Vec::len),
@@ -547,6 +599,37 @@ fn build_report(snapshot: &Value) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unquoted_service_without_writable_interpretation_is_context_only() {
+        let report = build_report(&json!({
+            "success": true,
+            "service_exposure": [{
+                "name": "ExampleService",
+                "unquoted_path_with_spaces": true,
+                "privileged_execution_context": true,
+                "writable_interpretation_candidates": [],
+                "broad_write_acl": []
+            }]
+        }));
+        assert_eq!(report["summary"]["findings"], 0);
+        assert_eq!(report["service_exposure"][0]["unquoted_path_with_spaces"], true);
+    }
+
+    #[test]
+    fn privileged_service_requires_writable_candidate_for_high_finding() {
+        let report = build_report(&json!({
+            "success": true,
+            "service_exposure": [{
+                "unquoted_path_with_spaces": true,
+                "privileged_execution_context": true,
+                "writable_interpretation_candidates": [{"candidate":"C:\\Example.exe"}],
+                "broad_write_acl": []
+            }]
+        }));
+        assert_eq!(report["summary"]["findings"], 1);
+        assert_eq!(report["findings"][0]["priority"], "high");
+    }
 
     #[test]
     fn broad_write_acl_requires_review() {
