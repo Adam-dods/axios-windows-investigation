@@ -1,5 +1,6 @@
 @echo off
 setlocal
+color 07 >nul
 set "AXIOS_INSTALLER_PATH=%~f0"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$source=[IO.File]::ReadAllText($env:AXIOS_INSTALLER_PATH); $marker=':AXIOS_POWERSHELL'; Invoke-Expression $source.Substring($source.LastIndexOf($marker)+$marker.Length)"
 set "AXIOS_EXIT_CODE=%ERRORLEVEL%"
