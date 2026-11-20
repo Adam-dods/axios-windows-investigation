@@ -97,7 +97,7 @@ The first stable release, dated **1 October 2026**, was researched and engineere
 .\axios.cmd -Mode Results
 ```
 
-Download [`axios-windows-investigation.zip`](https://github.com/Adam-dods/axios-windows-investigation/releases/latest) from [GitHub Releases](https://github.com/Adam-dods/axios-windows-investigation/releases/latest), extract it, and run `axios.cmd` from CMD or PowerShell. The existing `axios.ps1` commands remain available in PowerShell.
+Download `axios-windows-investigation.zip` and `axios-unzip.cmd` from the same release into Downloads. Open `axios-unzip.cmd` to extract the ZIP with an inline console progress bar; it opens the extracted folder when finished. You can also extract the ZIP with Windows and run `axios.cmd` from CMD or PowerShell. The existing `axios.ps1` commands remain available in PowerShell.
 
 ---
 

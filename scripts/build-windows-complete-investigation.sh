@@ -78,6 +78,7 @@ ROOT="$TEMP_DIR/$PACKAGE_NAME"
 BIN="$ROOT/bin"
 OUT="$OUTPUT_DIR/$PACKAGE_NAME.zip"
 ARCHIVE="$TEMP_DIR/$PACKAGE_NAME.zip"
+UNZIP_HELPER="$OUTPUT_DIR/axios-unzip.cmd"
 
 cleanup() {
   rm -rf "$TEMP_DIR"
@@ -168,7 +169,9 @@ fi
 
 unzip -t "$ARCHIVE" >/dev/null
 mv -f "$ARCHIVE" "$OUT"
+cp "$PROJECT_ROOT/installer/windows/axios-unzip.cmd" "$UNZIP_HELPER"
 
 echo "AXIOS_RELEASE_BUILD_PASS=true"
 echo "BINARIES_PACKAGED=${#NAMES[@]}"
 echo "ZIP=$OUT"
+echo "UNZIP_HELPER=$UNZIP_HELPER"

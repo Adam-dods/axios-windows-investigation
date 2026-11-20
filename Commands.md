@@ -37,14 +37,16 @@ How to extract, start, and use every supported AXIOS investigation mode.
 - Administrator PowerShell, **only** for `Administrator` mode
 - Authorization to investigate the system or network target
 
-AXIOS needs **no installation**. Extract the package and run `axios.cmd` in CMD or PowerShell. The `axios.ps1` entrypoint remains available for PowerShell.
+AXIOS needs **no installation**. The optional `axios-unzip.cmd` helper extracts the package; run `axios.cmd` in CMD or PowerShell afterward. The `axios.ps1` entrypoint remains available for PowerShell.
 
 ---
 
 ## Extract and start
 
-1. Download `axios-windows-investigation.zip` from **GitHub Releases** and place it in your `Downloads` folder.
-2. Open PowerShell and run:
+1. Download `axios-windows-investigation.zip` and `axios-unzip.cmd` from the **same GitHub release** into `Downloads`.
+2. Open `axios-unzip.cmd`. It shows inline extraction progress and opens the extracted folder when complete. The ZIP remains in Downloads.
+
+If you prefer manual extraction, open PowerShell and run:
 
 ```powershell
 $Zip  = "$env:USERPROFILE\Downloads\axios-windows-investigation.zip"

@@ -31,6 +31,31 @@ try {
         throw 'Focused User commands are missing from Help.'
     }
 
+    $unzipFixture = Join-Path $package 'unzip-fixture'
+    $archiveRoot = Join-Path $unzipFixture 'axios-windows-investigation'
+    $null = New-Item -ItemType Directory -Path $archiveRoot -Force
+    [IO.File]::WriteAllText((Join-Path $archiveRoot 'axios.cmd'), '@echo off')
+    [IO.File]::WriteAllText((Join-Path $archiveRoot 'readme.txt'), 'AXIOS extraction fixture')
+    Copy-Item (Join-Path $root 'installer\windows\axios-unzip.cmd') $unzipFixture
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [IO.Compression.ZipFile]::CreateFromDirectory(
+        $archiveRoot,
+        (Join-Path $unzipFixture 'axios-windows-investigation.zip'),
+        [IO.Compression.CompressionLevel]::Optimal,
+        $true
+    )
+    $env:AXIOS_UNZIP_TEST_MODE = '1'
+    try {
+        $unzipOutput = & (Join-Path $unzipFixture 'axios-unzip.cmd') | Out-String
+        if ($LASTEXITCODE -ne 0 -or $unzipOutput -notmatch 'AXIOS unzip\s+100%' -or
+            -not (Test-Path -LiteralPath (Join-Path $unzipFixture 'AXIOS\axios-windows-investigation\readme.txt'))) {
+            throw 'Double-click extraction helper failed to extract and report 100 percent.'
+        }
+    }
+    finally {
+        Remove-Item Env:AXIOS_UNZIP_TEST_MODE -ErrorAction SilentlyContinue
+    }
+
     . (Join-Path $root 'installer\windows\Write-AXIOS-Terminal-Results.ps1')
     Set-StrictMode -Version 2.0
     $priorityOnly = [pscustomobject]@{ priority='high'; title='User exposure' }
