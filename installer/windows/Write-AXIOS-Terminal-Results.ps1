@@ -1,6 +1,6 @@
 # Console-only presentation. Evidence and machine-readable reports are unchanged.
 function Write-AxiosConsoleTable {
-    param([Parameter(Mandatory)][object[]]$Rows)
+    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Rows)
     if ($Rows.Count -eq 0) { return }
     $width = 100
     try { $width = [Math]::Max(78, [Console]::WindowWidth - 1) } catch {}
@@ -239,7 +239,7 @@ function Write-AxiosTerminalUser {
 function Write-AxiosTerminalNetwork {
     param([object]$Report, [string]$Focus, [string]$SavedPath = '')
     Write-Host ''
-    Write-Host ("AXIOS NETWORK · {0}  {1}" -f $Focus.ToUpperInvariant(),
+    Write-Host ("AXIOS NETWORK - {0}  {1}" -f $Focus.ToUpperInvariant(),
         ([string]$Report.collection_status).ToUpperInvariant())
     $rows = @(
         [pscustomobject]@{ Area='Findings'; Observed=@($Report.findings).Count }
