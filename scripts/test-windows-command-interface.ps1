@@ -92,6 +92,19 @@ try {
     if ((Get-AxiosConsoleObservationTitle $describedContext) -ne 'Source visibility limited') {
         throw 'A descriptive context reason must be shown in the table.'
     }
+    $auditContext = [pscustomobject]@{ classification='context'; collector='axios_audit_correlation' }
+    if ((Get-AxiosConsoleObservationTitle $auditContext) -ne 'Artifact activity correlated across audit and runtime evidence') {
+        throw 'Audit correlation context must have a useful title.'
+    }
+    $defenderFinding = [pscustomobject]@{
+        priority='high'; id='defender_user_writable_exclusion';
+        reason='Defender excludes a user-writable location'; path='C:\Users\Test\AppData\Local\Temp\files'
+    }
+    $defenderRow = @(Get-AxiosConsoleFindingRows @($defenderFinding))[0]
+    if ($defenderRow.Finding -ne 'Defender excludes a user-writable location' -or
+        $defenderRow.Details -notmatch 'C:\\Users\\Test\\AppData\\Local\\Temp\\files') {
+        throw 'Defender exclusion must show its reason and path in terminal results.'
+    }
     $priorityOnly = [pscustomobject]@{ priority='high'; title='User exposure' }
     $severityOnly = [pscustomobject]@{ severity='medium'; title='Control review' }
     if ((Get-AxiosConsolePriority $priorityOnly) -ne 'high' -or

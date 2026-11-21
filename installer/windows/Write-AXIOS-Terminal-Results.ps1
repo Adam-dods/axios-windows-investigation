@@ -50,6 +50,9 @@ function Get-AxiosConsoleObservationTitle {
         }
     }
     $collector = [string](Get-AxiosConsoleProperty $Item 'collector')
+    if ($collector -eq 'axios_audit_correlation') {
+        return 'Artifact activity correlated across audit and runtime evidence'
+    }
     if ($collector) { return ('Context from {0} (no description supplied)' -f $collector) }
     return 'Context record without a description'
 }
@@ -61,14 +64,18 @@ function Get-AxiosConsoleFindingRows {
         $details = @()
         foreach ($key in @('verification_state','status','path','observed_value','endpoint','service_name','process_id')) {
             $value = Get-AxiosConsoleProperty $finding $key
-            if ($null -ne $value) { $details += ('{0}: {1}' -f ($key -replace '_',' '), (Get-AxiosConsoleValue $value)) }
+            if ($null -ne $value -and -not [string]::IsNullOrWhiteSpace([string]$value)) {
+                $details += ('{0}: {1}' -f ($key -replace '_',' '), (Get-AxiosConsoleValue $value))
+            }
         }
         $evidence = Get-AxiosConsoleProperty $finding 'evidence'
         if ($null -ne $evidence) { $details += Get-AxiosConsoleValue $evidence }
+        $reason = [string](Get-AxiosConsoleProperty $finding 'reason')
+        if ($reason) { $details += $reason }
         if ($source) { $details += "Source: $source" }
         [pscustomobject]@{
             Level=(Get-AxiosConsolePriority $finding).ToUpperInvariant()
-            Finding=[string](Get-AxiosConsoleFirst $finding @('title','label','finding','description','id') 'Unlabelled finding')
+            Finding=([string](Get-AxiosConsoleFirst $finding @('title','label','finding','description','reason','id') 'Unlabelled finding') -replace '_',' ')
             Details=($details | Where-Object { $_ }) -join "`n"
         }
     }
