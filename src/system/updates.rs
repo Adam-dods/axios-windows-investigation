@@ -74,9 +74,31 @@ $operatingSystem = Invoke-AxiosOptional 'operating system' {{
 
 $allHotfixes = @(
     Invoke-AxiosOptional 'hotfixes' {{
-        Get-CimInstance Win32_QuickFixEngineering -ErrorAction Stop |
-            Sort-Object InstalledOn -Descending |
-            Select-Object HotFixID, Description, InstalledBy, InstalledOn
+        $dateUnavailable = $false
+        $entries = @(
+            foreach ($hotfix in @(Get-CimInstance Win32_QuickFixEngineering -ErrorAction Stop)) {{
+                $installedOn = $null
+                try {{
+                    if ($null -ne $hotfix.InstalledOn) {{
+                        $installedOn = ([datetime]$hotfix.InstalledOn).ToString('o')
+                    }}
+                }}
+                catch {{
+                    $dateUnavailable = $true
+                }}
+
+                [PSCustomObject]@{{
+                    HotFixID = [string]$hotfix.HotFixID
+                    Description = [string]$hotfix.Description
+                    InstalledBy = [string]$hotfix.InstalledBy
+                    InstalledOn = $installedOn
+                }}
+            }}
+        )
+        if ($dateUnavailable) {{
+            $axiosCollectionErrors.Add('Some hotfix installation dates are unavailable; hotfix IDs were retained.')
+        }}
+        $entries | Sort-Object InstalledOn -Descending
     }} @()
 )
 $hotfixes = @($allHotfixes | Select-Object -First $maxHotfixes)

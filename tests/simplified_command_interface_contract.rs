@@ -67,13 +67,13 @@ fn hidden_developer_commands_route_to_isolated_tools() {
 fn shipped_reference_contains_only_public_interface() {
     for command in [
         "1. USER",
-        "2. ADMINISTRATOR",
-        "3. NETWORK",
-        "4. SYSTEM",
-        "5. PERSISTENCE",
-        "6. SOFTWARE",
-        "7. RESULTS",
-        "8. HELP",
+        "2. NETWORK",
+        "3. ADMINISTRATOR",
+        "-Focus System",
+        "-Focus Persistence",
+        "-Focus Software",
+        "-Mode Results",
+        "-Mode Help",
     ] {
         assert!(COMMANDS.contains(command), "{command}");
     }

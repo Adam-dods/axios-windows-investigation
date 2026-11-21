@@ -345,7 +345,7 @@ function Get-AxiosExposurePriority {
 }
 
 function Get-AxiosFileAclAssessment {
-    param([string]$Path, [string]$Source)
+    param([string]$Path, [string]$Source, [switch]$RequireCreateFile)
 
     if ([string]::IsNullOrWhiteSpace($Path)) {
         return [PSCustomObject]@{
@@ -357,7 +357,7 @@ function Get-AxiosFileAclAssessment {
     }
 
     $expanded = [Environment]::ExpandEnvironmentVariables($Path).Trim('"')
-    $key = $expanded.ToLowerInvariant()
+    $key = ('{0}:{1}' -f $RequireCreateFile.IsPresent, $expanded.ToLowerInvariant())
     if ($fileAclCache.ContainsKey($key)) {
         return $fileAclCache[$key]
     }
@@ -376,14 +376,23 @@ function Get-AxiosFileAclAssessment {
     try {
         $acl = Get-Acl -LiteralPath $expanded -ErrorAction Stop
         $rules = @($acl.GetAccessRules($true, $true, [System.Security.Principal.SecurityIdentifier]))
-        $writeMask = [int][System.Security.AccessControl.FileSystemRights]::WriteData -bor
-            [int][System.Security.AccessControl.FileSystemRights]::AppendData -bor
-            [int][System.Security.AccessControl.FileSystemRights]::WriteAttributes -bor
-            [int][System.Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
-            [int][System.Security.AccessControl.FileSystemRights]::Delete -bor
-            [int][System.Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
-            [int][System.Security.AccessControl.FileSystemRights]::ChangePermissions -bor
-            [int][System.Security.AccessControl.FileSystemRights]::TakeOwnership
+        $writeMask = if ($RequireCreateFile) {
+            # On a directory, WriteData means CreateFiles. AppendData only
+            # creates subdirectories and cannot create the candidate .exe.
+            [int][System.Security.AccessControl.FileSystemRights]::WriteData -bor
+                [int][System.Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+                [int][System.Security.AccessControl.FileSystemRights]::TakeOwnership
+        }
+        else {
+            [int][System.Security.AccessControl.FileSystemRights]::WriteData -bor
+                [int][System.Security.AccessControl.FileSystemRights]::AppendData -bor
+                [int][System.Security.AccessControl.FileSystemRights]::WriteAttributes -bor
+                [int][System.Security.AccessControl.FileSystemRights]::WriteExtendedAttributes -bor
+                [int][System.Security.AccessControl.FileSystemRights]::Delete -bor
+                [int][System.Security.AccessControl.FileSystemRights]::DeleteSubdirectoriesAndFiles -bor
+                [int][System.Security.AccessControl.FileSystemRights]::ChangePermissions -bor
+                [int][System.Security.AccessControl.FileSystemRights]::TakeOwnership
+        }
 
         $allow = 0
         $deny = 0
@@ -621,7 +630,7 @@ function Get-AxiosUnquotedCandidates {
         }
         $candidate = $ExecutablePath.Substring(0, $index) + '.exe'
         $parent = Split-Path -Parent $candidate
-        $assessment = Get-AxiosFileAclAssessment $parent ('unquoted_parent:{0}' -f $candidate)
+        $assessment = Get-AxiosFileAclAssessment $parent ('unquoted_parent:{0}' -f $candidate) -RequireCreateFile
         $items.Add([PSCustomObject]@{
             candidate = $candidate
             parent = $parent

@@ -43,6 +43,11 @@ fn chromium_localized_manifest_names_are_resolved() {
 
     assert!(BROWSER.contains("name = [string]$ResolvedName"));
     assert!(BROWSER.contains("description = [string]$ResolvedDescription"));
+    assert_eq!(
+        BROWSER.matches("-Encoding UTF8").count(),
+        2,
+        "manifest and locale JSON must use UTF-8 on Windows PowerShell"
+    );
 }
 
 #[test]

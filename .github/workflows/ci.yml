@@ -13,6 +13,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  windows-interface:
+    name: Windows PowerShell syntax and CMD entrypoint
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse scripts and run Help from both shells
+        shell: powershell
+        run: .\scripts\test-windows-command-interface.ps1
+
   check:
     name: Format, test, and lint
     runs-on: ubuntu-latest

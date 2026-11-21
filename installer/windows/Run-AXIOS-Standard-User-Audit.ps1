@@ -212,6 +212,14 @@ $Detailed = [PSCustomObject]@{
     $AxiosUtf8
 )
 
+if ($env:AXIOS_TABLE_OUTPUT -eq "1") {
+    . (Join-Path $PSScriptRoot "Write-AXIOS-Terminal-Results.ps1")
+    $SavedPath = if ($env:AXIOS_CONSOLE_SESSION -eq "1") { "" } else { $DetailedReport }
+    Write-AxiosTerminalUser -Manifest $Manifest -Network $Network `
+        -Scope $Scope -Exposure $Exposure -SavedPath $SavedPath
+    return
+}
+
 Write-Host ""
 function ConvertTo-AxiosDisplayName {
     param([string]$Name)

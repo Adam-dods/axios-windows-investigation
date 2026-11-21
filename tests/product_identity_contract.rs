@@ -15,7 +15,7 @@ fn product_uses_calendar_release_identity() {
 #[test]
 fn public_package_and_entrypoint_are_stable_and_professional() {
     assert!(BUILD.contains("PACKAGE_NAME=\"axios-windows-investigation\""));
-    assert!(BUILD.contains("$OUTPUT_DIR/$PACKAGE_NAME.zip"));
+    assert!(BUILD.contains("$OUTPUT_DIR/$PACKAGE_NAME.cmd"));
     assert!(BUILD.contains("$ROOT/axios.ps1"));
     assert!(ENTRYPOINT.contains("scripts\\Run-AXIOS.ps1"));
     assert!(ENTRYPOINT.contains("[CmdletBinding()]"));

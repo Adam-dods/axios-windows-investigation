@@ -1048,6 +1048,20 @@ if ($Layer -eq "Results") {
         ($Report | ConvertTo-Json -Depth 30),
         $AxiosUtf8
     )
+    $Result["detailed_report"] = $DetailedResultPath
+
+    if ($env:AXIOS_TABLE_OUTPUT -eq "1") {
+        . (Join-Path $PSScriptRoot "Write-AXIOS-Terminal-Results.ps1")
+        $SavedPath = if ($env:AXIOS_CONSOLE_SESSION -eq "1") { "" } else { $Candidate.FullName }
+        Write-AxiosTerminalResults `
+            -Summary $Result `
+            -Findings $ImportantFindings `
+            -Context $ForensicObservations `
+            -Gaps $Errors `
+            -Checks $NextBestChecks `
+            -SavedPath $SavedPath
+        return
+    }
 
     Write-Host ""
     $SummaryHeading = "SECURITY ASSESSMENT SUMMARY"
@@ -3450,35 +3464,59 @@ if ($Layer -eq "Software") {
             $OutputDirectory `
             "AXIOS-Quick-Details-$Stamp.txt"
     
-        Write-AxiosQuickHumanReport `
-            -LayerResult $LayerResult `
-            -ReportData $ReportData `
-            -DetailedReportPath $DetailedReportPath `
-            -ResultPath $ResultPath `
-            -Encoding $AxiosUtf8
+        $TableOutput = $env:AXIOS_TABLE_OUTPUT -eq '1'
+        if ($TableOutput) { . (Join-Path $PSScriptRoot 'Write-AXIOS-Terminal-Results.ps1') }
+        $RenderLegacy = {
+            Write-AxiosQuickHumanReport `
+                -LayerResult $LayerResult `
+                -ReportData $ReportData `
+                -DetailedReportPath $DetailedReportPath `
+                -ResultPath $ResultPath `
+                -Encoding $AxiosUtf8
+        }
+        if ($TableOutput) { & $RenderLegacy 6>$null } else { & $RenderLegacy }
+        if ($TableOutput) {
+            Write-AxiosTerminalLayer -LayerResult $LayerResult -ReportData $ReportData -SavedPath $DetailedReportPath
+        }
     }
     elseif ($Layer -eq "Context") {
         $DetailedReportPath = Join-Path `
             $OutputDirectory `
             "AXIOS-Context-Details-$Stamp.txt"
     
-        Write-AxiosContextHumanReport `
-            -Report ($ReportData["context-posture"]) `
-            -DetailedReportPath $DetailedReportPath `
-            -ResultPath $ResultPath `
-            -Encoding $AxiosUtf8
+        $TableOutput = $env:AXIOS_TABLE_OUTPUT -eq '1'
+        if ($TableOutput) { . (Join-Path $PSScriptRoot 'Write-AXIOS-Terminal-Results.ps1') }
+        $RenderLegacy = {
+            Write-AxiosContextHumanReport `
+                -Report ($ReportData["context-posture"]) `
+                -DetailedReportPath $DetailedReportPath `
+                -ResultPath $ResultPath `
+                -Encoding $AxiosUtf8
+        }
+        if ($TableOutput) { & $RenderLegacy 6>$null } else { & $RenderLegacy }
+        if ($TableOutput) {
+            Write-AxiosTerminalLayer -LayerResult $LayerResult -ReportData $ReportData -SavedPath $DetailedReportPath
+        }
     }
     elseif ($Layer -in @("System", "Persistence", "Software")) {
         $DetailedReportPath = Join-Path `
             $OutputDirectory `
             "AXIOS-$Layer-Details-$Stamp.txt"
     
-        Write-AxiosLayerHumanReport `
-            -LayerResult $LayerResult `
-            -ReportData $ReportData `
-            -DetailedReportPath $DetailedReportPath `
-            -ResultPath $ResultPath `
-            -Encoding $AxiosUtf8
+        $TableOutput = $env:AXIOS_TABLE_OUTPUT -eq '1'
+        if ($TableOutput) { . (Join-Path $PSScriptRoot 'Write-AXIOS-Terminal-Results.ps1') }
+        $RenderLegacy = {
+            Write-AxiosLayerHumanReport `
+                -LayerResult $LayerResult `
+                -ReportData $ReportData `
+                -DetailedReportPath $DetailedReportPath `
+                -ResultPath $ResultPath `
+                -Encoding $AxiosUtf8
+        }
+        if ($TableOutput) { & $RenderLegacy 6>$null } else { & $RenderLegacy }
+        if ($TableOutput) {
+            Write-AxiosTerminalLayer -LayerResult $LayerResult -ReportData $ReportData -SavedPath $DetailedReportPath
+        }
     }
     
     $Size = (Get-Item -LiteralPath $ResultPath).Length
