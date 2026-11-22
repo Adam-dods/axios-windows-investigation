@@ -85,6 +85,13 @@ function Get-AxiosConsoleValue {
     param([AllowNull()][object]$Value)
     if ($null -eq $Value) { return '' }
     if ($Value -is [bool]) { return $(if ($Value) { 'Yes' } else { 'No' }) }
+    if ($Value -is [string] -and $Value -match '^/Date\((-?\d+)(?:[+-]\d{4})?\)/$') {
+        try {
+            return ([datetime]::new(1970,1,1,0,0,0,[DateTimeKind]::Utc)).AddMilliseconds(
+                [double]::Parse($Matches[1], [Globalization.CultureInfo]::InvariantCulture)
+            ).ToString('yyyy-MM-ddTHH:mm:ss.fffZ', [Globalization.CultureInfo]::InvariantCulture)
+        } catch { return $Value }
+    }
     if ($Value -is [string] -or $Value -is [ValueType]) { return [string]$Value }
     if ($Value -is [System.Collections.IDictionary]) {
         return (@($Value.GetEnumerator() | ForEach-Object {
@@ -97,6 +104,53 @@ function Get-AxiosConsoleValue {
     return (@($Value.PSObject.Properties | ForEach-Object {
         '{0}: {1}' -f ($_.Name -replace '_',' '), (Get-AxiosConsoleValue $_.Value)
     }) -join '; ')
+}
+
+function Get-AxiosConsoleNetworkObservationRows {
+    param([object[]]$Observations)
+    $groups = [ordered]@{}
+    foreach ($item in $Observations) {
+        if ($null -eq $item) { continue }
+        $classification = [string](Get-AxiosConsoleProperty $item 'classification')
+        if ($classification -eq 'wildcard_listener_observed') {
+            $path = [string](Get-AxiosConsoleProperty $item 'process_path')
+            $name = [string](Get-AxiosConsoleProperty $item 'process_name')
+            $identity = if ($path) { $path } elseif ($name) { $name } else { 'name unavailable' }
+            [pscustomobject]@{
+                Observation='wildcard listener observed'
+                Detail=('pid: {0}; process: {1}; local endpoint: {2}:{3}' -f
+                    (Get-AxiosConsoleProperty $item 'pid'),$identity,
+                    (Get-AxiosConsoleProperty $item 'local_address'),
+                    (Get-AxiosConsoleProperty $item 'local_port'))
+            }
+            continue
+        }
+        if ($classification -ne 'user_writable_process_public_connection_observed') {
+            [pscustomobject]@{
+                Observation=($classification -replace '_',' ')
+                Detail=Get-AxiosConsoleValue $item
+            }
+            continue
+        }
+        $path = [string](Get-AxiosConsoleProperty $item 'process_path')
+        $address = [string](Get-AxiosConsoleProperty $item 'remote_address')
+        $port = [string](Get-AxiosConsoleProperty $item 'remote_port')
+        $pid = [string](Get-AxiosConsoleProperty $item 'pid')
+        $key = @($pid,$path,$address,$port) -join '|'
+        if (-not $groups.Contains($key)) {
+            $groups[$key] = [pscustomobject]@{
+                Pid=$pid; Process=$path; Address=$address; Port=$port; Count=0
+            }
+        }
+        $groups[$key].Count++
+    }
+    foreach ($group in $groups.Values) {
+        [pscustomobject]@{
+            Observation='user writable process public connection observed'
+            Detail=('pid: {0}; process path: {1}; remote endpoint: {2}:{3}; connection count: {4}' -f
+                $group.Pid,$group.Process,$group.Address,$group.Port,$group.Count)
+        }
+    }
 }
 
 function Write-AxiosTerminalLayer {
@@ -390,10 +444,7 @@ function Write-AxiosTerminalNetwork {
     } else { Write-Host 'No verified network finding within available visibility.' }
     if (@($observations | Where-Object { $null -ne $_ }).Count -gt 0) {
         Write-Host 'NETWORK OBSERVATIONS'
-        Write-AxiosConsoleTable @($observations | ForEach-Object {
-            [pscustomobject]@{ Observation=([string](Get-AxiosConsoleFirst $_ @('classification','title','id') 'Observation') -replace '_',' ');
-                Detail=Get-AxiosConsoleValue $_ }
-        })
+        Write-AxiosConsoleTable @(Get-AxiosConsoleNetworkObservationRows $observations)
     }
     if (@($errors | Where-Object { $null -ne $_ }).Count -gt 0) {
         Write-Host 'COLLECTION LIMITATIONS'

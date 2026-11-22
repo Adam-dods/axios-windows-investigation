@@ -10,6 +10,7 @@ All notable changes to AXIOS are documented here. The format follows [Keep a Cha
 - Corrected the Administrator service-path ACL check to distinguish creating a file from creating a subdirectory. Fixed the PowerShell switch conversion error found at stage 38.
 - Made browser extension manifest and localized-message reads explicitly UTF-8. Unlabelled forensic context now explains when the source supplied no description.
 - Moved ordinary outbound connections from applications installed in a user profile to network context; their location alone does not establish a security finding. Improved terminal finding details and the audit correlation context label.
+- Grouped repeated outbound network observations in the console while retaining each original record in JSON. Displayed available process names for protected listeners and rendered legacy Windows event dates as UTC.
 - Windows validation observed User complete and Administrator 42/42 complete with 0 confirmed threats, 12 important findings and 2 collection gaps on the test PC. These are machine-specific observations, not a claim of a clean system or universal compatibility.
 - Release remains pending full Windows command checks and verification of the final packaged file.
 

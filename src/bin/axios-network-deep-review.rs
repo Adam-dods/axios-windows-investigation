@@ -480,6 +480,10 @@ fn build_report(passive: &Value, active: &[ActiveResult], options: &Options) -> 
             .and_then(|value| value.get("path"))
             .and_then(Value::as_str)
             .unwrap_or("");
+        let process_name = process
+            .and_then(|value| value.get("name"))
+            .and_then(Value::as_str)
+            .unwrap_or("");
 
         let state = connection
             .get("state")
@@ -506,6 +510,7 @@ fn build_report(passive: &Value, active: &[ActiveResult], options: &Options) -> 
                 "classification": "wildcard_listener_observed",
                 "confidence": "high",
                 "pid": pid,
+                "process_name": process_name,
                 "process_path": path,
                 "local_address": local_address,
                 "local_port": local_port
@@ -538,6 +543,7 @@ fn build_report(passive: &Value, active: &[ActiveResult], options: &Options) -> 
                 "classification": "user_writable_process_public_connection_observed",
                 "interpretation": "An outbound connection from a user profile is not by itself evidence of malware or a security weakness.",
                 "pid": pid,
+                "process_name": process_name,
                 "process_path": path,
                 "remote_address": remote_address,
                 "remote_port": connection.get("remote_port").cloned().unwrap_or(Value::Null),
@@ -1485,5 +1491,27 @@ mod tests {
             "C:\\Users\\Test\\AppData\\Local\\Game\\game.exe"
         );
         assert_eq!(report["claim_policy"]["malware_confirmed"], false);
+    }
+
+    #[test]
+    fn protected_listener_preserves_known_process_name_when_path_is_hidden() {
+        let report = build_report(
+            &json!({
+                "success": true,
+                "collection_status": "complete",
+                "processes": [{"pid": 4, "name": "System", "path": null}],
+                "tcp_connections": [{
+                    "owning_process": 4,
+                    "state": "Listen",
+                    "local_address": "::",
+                    "local_port": 445
+                }],
+                "totals": {}
+            }),
+            &[],
+            &options(Focus::Full),
+        );
+        assert_eq!(report["observations"][0]["process_name"], "System");
+        assert_eq!(report["observations"][0]["process_path"], "");
     }
 }

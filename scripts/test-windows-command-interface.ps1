@@ -105,6 +105,27 @@ try {
         $defenderRow.Details -notmatch 'C:\\Users\\Test\\AppData\\Local\\Temp\\files') {
         throw 'Defender exclusion must show its reason and path in terminal results.'
     }
+    if ((Get-AxiosConsoleValue '/Date(0)/') -ne '1970-01-01T00:00:00.000Z') {
+        throw 'Windows event timestamps must render as UTC dates.'
+    }
+    $networkRows = @(Get-AxiosConsoleNetworkObservationRows @(
+        [pscustomobject]@{
+            classification='wildcard_listener_observed'; pid=4;
+            process_name='System'; process_path=''; local_address='::'; local_port=445
+        },
+        [pscustomobject]@{
+            classification='user_writable_process_public_connection_observed'; pid=42;
+            process_path='C:\Users\Test\AppData\Local\app.exe'; remote_address='8.8.8.8'; remote_port=443
+        },
+        [pscustomobject]@{
+            classification='user_writable_process_public_connection_observed'; pid=42;
+            process_path='C:\Users\Test\AppData\Local\app.exe'; remote_address='8.8.8.8'; remote_port=443
+        }
+    ))
+    if ($networkRows.Count -ne 2 -or $networkRows[0].Detail -notmatch 'process: System' -or
+        $networkRows[1].Detail -notmatch 'connection count: 2') {
+        throw 'Network display must retain process identity and group only matching outbound rows.'
+    }
     $priorityOnly = [pscustomobject]@{ priority='high'; title='User exposure' }
     $severityOnly = [pscustomobject]@{ severity='medium'; title='Control review' }
     if ((Get-AxiosConsolePriority $priorityOnly) -ne 'high' -or
