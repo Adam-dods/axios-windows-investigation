@@ -135,11 +135,11 @@ function Get-AxiosConsoleNetworkObservationRows {
         $path = [string](Get-AxiosConsoleProperty $item 'process_path')
         $address = [string](Get-AxiosConsoleProperty $item 'remote_address')
         $port = [string](Get-AxiosConsoleProperty $item 'remote_port')
-        $pid = [string](Get-AxiosConsoleProperty $item 'pid')
-        $key = @($pid,$path,$address,$port) -join '|'
+        $processId = [string](Get-AxiosConsoleProperty $item 'pid')
+        $key = @($processId,$path,$address,$port) -join '|'
         if (-not $groups.Contains($key)) {
             $groups[$key] = [pscustomobject]@{
-                Pid=$pid; Process=$path; Address=$address; Port=$port; Count=0
+                Pid=$processId; Process=$path; Address=$address; Port=$port; Count=0
             }
         }
         $groups[$key].Count++
