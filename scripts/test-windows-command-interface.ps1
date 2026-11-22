@@ -126,6 +126,20 @@ try {
         $networkRows[1].Detail -notmatch 'connection count: 2') {
         throw 'Network display must retain process identity and group only matching outbound rows.'
     }
+    $tcpFixture = [pscustomobject]@{
+        processes=@([pscustomobject]@{ pid=4; name='System'; path=$null })
+    }
+    $tcpRows = @(Get-AxiosConsoleTcpRows $tcpFixture @(
+        [pscustomobject]@{ owning_process=4; local_address='::'; local_port=80;
+            remote_address='::'; remote_port=0; state='Listen' },
+        [pscustomobject]@{ owning_process=99; local_address='127.0.0.1'; local_port=9000;
+            remote_address='127.0.0.1'; remote_port=1; state='Established' }
+    ))
+    if ($tcpRows.Count -ne 2 -or $tcpRows[0].Local -ne '[::]:80' -or
+        $tcpRows[0].Process -ne 'System (4)' -or
+        $tcpRows[1].Process -ne 'PID 99 (name unavailable)') {
+        throw 'TCP endpoints must show the owning PID, known process name, and unambiguous IPv6.'
+    }
     $priorityOnly = [pscustomobject]@{ priority='high'; title='User exposure' }
     $severityOnly = [pscustomobject]@{ severity='medium'; title='Control review' }
     if ((Get-AxiosConsolePriority $priorityOnly) -ne 'high' -or

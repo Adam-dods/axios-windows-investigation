@@ -106,6 +106,44 @@ function Get-AxiosConsoleValue {
     }) -join '; ')
 }
 
+function Format-AxiosConsoleEndpoint {
+    param([string]$Address, [AllowNull()][object]$Port)
+    if ($Address.Contains(':') -and -not $Address.StartsWith('[')) {
+        $Address = '[{0}]' -f $Address
+    }
+    return ('{0}:{1}' -f $Address,$Port)
+}
+
+function Get-AxiosConsoleTcpRows {
+    param([object]$Report, [object[]]$Connections)
+    $processNames = @{}
+    foreach ($process in @(Get-AxiosConsoleProperty $Report 'processes')) {
+        if ($null -eq $process) { continue }
+        $processId = [string](Get-AxiosConsoleProperty $process 'pid')
+        $processName = [string](Get-AxiosConsoleProperty $process 'name')
+        if ($processId -and $processName) { $processNames[$processId] = $processName }
+    }
+    foreach ($connection in $Connections) {
+        if ($null -eq $connection) { continue }
+        $processId = [string](Get-AxiosConsoleProperty $connection 'owning_process')
+        $processLabel = if ($processId -and $processNames.ContainsKey($processId)) {
+            '{0} ({1})' -f $processNames[$processId],$processId
+        } elseif ($processId) {
+            'PID {0} (name unavailable)' -f $processId
+        } else { 'PID unavailable' }
+        [pscustomobject]@{
+            Local=Format-AxiosConsoleEndpoint `
+                ([string](Get-AxiosConsoleProperty $connection 'local_address')) `
+                (Get-AxiosConsoleProperty $connection 'local_port')
+            Remote=Format-AxiosConsoleEndpoint `
+                ([string](Get-AxiosConsoleProperty $connection 'remote_address')) `
+                (Get-AxiosConsoleProperty $connection 'remote_port')
+            State=Get-AxiosConsoleProperty $connection 'state'
+            Process=$processLabel
+        }
+    }
+}
+
 function Get-AxiosConsoleNetworkObservationRows {
     param([object[]]$Observations)
     $groups = [ordered]@{}
@@ -118,10 +156,11 @@ function Get-AxiosConsoleNetworkObservationRows {
             $identity = if ($path) { $path } elseif ($name) { $name } else { 'name unavailable' }
             [pscustomobject]@{
                 Observation='wildcard listener observed'
-                Detail=('pid: {0}; process: {1}; local endpoint: {2}:{3}' -f
+                Detail=('pid: {0}; process: {1}; local endpoint: {2}' -f
                     (Get-AxiosConsoleProperty $item 'pid'),$identity,
-                    (Get-AxiosConsoleProperty $item 'local_address'),
-                    (Get-AxiosConsoleProperty $item 'local_port'))
+                    (Format-AxiosConsoleEndpoint `
+                        ([string](Get-AxiosConsoleProperty $item 'local_address')) `
+                        (Get-AxiosConsoleProperty $item 'local_port')))
             }
             continue
         }
@@ -410,13 +449,7 @@ function Write-AxiosTerminalNetwork {
         }
         if ($connections.Count -gt 0) {
             Write-Host 'TCP ENDPOINTS'
-            Write-AxiosConsoleTable @($connections | ForEach-Object {
-                [pscustomobject]@{
-                    Local=('{0}:{1}' -f (Get-AxiosConsoleProperty $_ 'local_address'),(Get-AxiosConsoleProperty $_ 'local_port'))
-                    Remote=('{0}:{1}' -f (Get-AxiosConsoleProperty $_ 'remote_address'),(Get-AxiosConsoleProperty $_ 'remote_port'))
-                    State=(Get-AxiosConsoleProperty $_ 'state'); Process=(Get-AxiosConsoleProperty $_ 'pid')
-                }
-            })
+            Write-AxiosConsoleTable @(Get-AxiosConsoleTcpRows $Report $connections)
         }
     }
     if ($Focus -in @('connections','targeted','full') -and @($targets | Where-Object { $null -ne $_ }).Count -gt 0) {
