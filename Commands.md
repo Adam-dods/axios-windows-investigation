@@ -43,7 +43,7 @@ AXIOS needs **no installation**. The downloaded file contains the package and ex
 
 ## Extract and start
 
-1. For the next-release candidate, build the single `axios-windows-investigation.cmd` file into `Downloads`. The currently published `2026.9.27` release still uses a ZIP.
+1. Download the `axios-windows-investigation.cmd` asset from the [v2026.11.23 release](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) into `Downloads`. Compare its SHA-256 with the value on that page before running it.
 2. Run the file. It shows inline extraction progress and returns to the terminal when complete.
 
 Or open PowerShell and run this short command from Downloads:
@@ -532,11 +532,10 @@ Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 
 ### Script execution is blocked
 
-Allow it for the **current process only**, without changing the system policy:
+Use the CMD launcher. If your device's security policy blocks a component, record that limitation instead of changing the policy:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\axios.ps1 -Mode Help
+.\axios.cmd -Mode Help
 ```
 
 ### A report is partial

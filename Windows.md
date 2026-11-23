@@ -29,7 +29,7 @@ This document explains **what you need to run AXIOS**, **which commands need ele
 
 | Question | Answer |
 |---|---|
-| Do I need to install anything? | No. Extract the ZIP and run `axios.ps1` |
+| Do I need to install anything? | No. Run the release CMD to extract the package, then use `axios.cmd` |
 | Which commands need Administrator? | Only `Administrator` (the full 42-stage investigation) |
 | Can I run everything else as a standard user? | Yes, with some protected evidence reported as unavailable |
 | Does Administrator guarantee full visibility? | No. Windows protections and security products can still limit it |
@@ -43,30 +43,23 @@ To run AXIOS you need:
 
 - A Windows system
 - Windows PowerShell
-- The official `axios-windows-investigation.zip` release package
+- The official `axios-windows-investigation.cmd` release asset
 - Permission to investigate the system
 - Administrator PowerShell, **only** for the complete Administrator investigation
 
-AXIOS needs no permanent installation. Extract the package, use the process-only execution-policy command below, then run `.\axios.ps1` normally.
+AXIOS needs no permanent installation. The release CMD extracts the package into Downloads; run `axios.cmd` from that folder afterward.
 
 ---
 
 ## Extracting the release package
 
-Download `axios-windows-investigation.zip` and extract it into a clear local folder:
+Download the CMD asset from the [v2026.11.23 release](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) into Downloads. Compare its SHA-256 with the value on the release page, then run:
 
 ```powershell
-$Zip  = "$env:USERPROFILE\Downloads\axios-windows-investigation.zip"
-$Root = "$env:USERPROFILE\Downloads\AXIOS"
-
-Expand-Archive -LiteralPath $Zip -DestinationPath $Root -Force
-
-Set-Location "$Root\axios-windows-investigation"
-
-# Allows AXIOS in this PowerShell window only; Windows settings are unchanged.
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-
-.\axios.ps1 -Mode Help
+Get-FileHash "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd" -Algorithm SHA256
+& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
+.\axios.cmd -Mode Help
 ```
 
 Expected package directory (example):
@@ -75,25 +68,19 @@ Expected package directory (example):
 C:\Users\TestUser\Downloads\AXIOS\axios-windows-investigation
 ```
 
-AXIOS validates required package components before dependent investigations begin. If validation reports a missing file, extract the official ZIP again into a clean directory.
+The CMD shows extraction progress and does not start a scan. AXIOS validates required package components before dependent investigations. If validation reports a missing file, extract the official CMD package again into a clean directory.
 
 ---
 
 ## PowerShell requirements
 
-PowerShell is AXIOS's public Windows interface. Before the first AXIOS command in a newly opened PowerShell window, run:
+The `axios.cmd` interface works in CMD and PowerShell. For example:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\axios.cmd -Mode Help
 ```
 
-Then use the normal AXIOS commands, for example:
-
-```powershell
-.\axios.ps1 -Mode Help
-```
-
-The setting applies only to the current PowerShell process and does not modify Windows settings. Keep that same PowerShell window open while running commands and using `Results`.
+The `axios.ps1` interface also remains available in PowerShell. Keep the same terminal open for session results. If a device's security policy blocks a component, record the limitation; do not disable protections.
 
 ---
 
@@ -233,7 +220,7 @@ Where practical, AXIOS includes fallbacks for supported Windows interfaces. When
 Open a new PowerShell window with **Run as Administrator**, return to the AXIOS folder, and run the command again.
 
 **Package-integrity validation fails**
-Re-extract the official ZIP into a clean directory. Never run AXIOS from an incomplete extraction.
+Run the official CMD again into a clean directory. Never run AXIOS from an incomplete extraction.
 
 **A report is partial**
 Read the displayed visibility limitations and collection errors. A partial result is an honest description of incomplete coverage, not automatically a software failure.

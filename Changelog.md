@@ -2,7 +2,7 @@
 
 All notable changes to AXIOS are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and AXIOS uses **calendar-based release identifiers**.
 
-## Unreleased — Windows validation on 2026-11-20
+## [2026.11.23] — 2026-11-23
 
 - Added a single `axios-windows-investigation.cmd` package that extracts into Downloads with an inline progress bar and returns to the terminal. AXIOS investigations remain explicit commands.
 - Added CMD and PowerShell launch parity, three primary investigation modes, focused User and Network branches, table-based terminal results, and compact Administrator progress.
@@ -13,14 +13,16 @@ All notable changes to AXIOS are documented here. The format follows [Keep a Cha
 - Grouped repeated outbound network observations in the console while retaining each original record in JSON. Displayed available process names for protected listeners and rendered legacy Windows event dates as UTC.
 - TCP endpoint tables now resolve the actual owning process ID to its collected name and format IPv6 endpoints with brackets.
 - Windows validation observed User complete and Administrator 42/42 complete with 0 confirmed threats, 12 important findings and 2 collection gaps on the test PC. These are machine-specific observations, not a claim of a clean system or universal compatibility.
-- Release remains pending full Windows command checks and verification of the final packaged file.
+- PR #6 passed two CI checks and was merged into `main`. The published single-file CMD has SHA-256 `796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7`.
+- An earlier Windows 11 package passed 27/27 nonsecret command cases. After the final TCP display change, the CMD built on Kali was tested on Windows for Network `connections` and `services` with zero collection errors; the full matrix was not rerun on this final file. The maintainer also reports successful use on multiple Windows 11 PCs with different versions; machine-by-machine logs are not published here.
 
 ---
 
-Release `2026.9.27` is the first stable public release, prepared in September 2026 and published in October 2026.
+Release `2026.9.27` was the first stable public release, prepared in September 2026 and published in October 2026. The Rust package version remains `2026.9.27` in the `2026.11.23` GitHub distribution.
 
 ## Contents
 
+- [2026.11.23: Single-file CMD release](#20261123--2026-11-23)
 - [2026.9.27: First stable release](#202692727--2026-10-01)
 - [Added](#added)
 - [Changed](#changed)
