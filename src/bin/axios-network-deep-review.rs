@@ -480,6 +480,10 @@ fn build_report(passive: &Value, active: &[ActiveResult], options: &Options) -> 
             .and_then(|value| value.get("path"))
             .and_then(Value::as_str)
             .unwrap_or("");
+        let process_name = process
+            .and_then(|value| value.get("name"))
+            .and_then(Value::as_str)
+            .unwrap_or("");
 
         let state = connection
             .get("state")
@@ -506,6 +510,7 @@ fn build_report(passive: &Value, active: &[ActiveResult], options: &Options) -> 
                 "classification": "wildcard_listener_observed",
                 "confidence": "high",
                 "pid": pid,
+                "process_name": process_name,
                 "process_path": path,
                 "local_address": local_address,
                 "local_port": local_port
@@ -533,21 +538,17 @@ fn build_report(passive: &Value, active: &[ActiveResult], options: &Options) -> 
             && is_public_address(remote_address)
             && is_user_writable_path(path)
         {
-            findings.push(json!({
-                "id": "user_writable_process_has_public_connection",
-                "priority": "medium",
+            observations.push(json!({
                 "confidence": "high",
-                "classification": "network_execution_requires_review",
-                "title": "A process in a user-writable location has a public network connection",
-                "evidence": {
-                    "pid": pid,
-                    "process_path": path,
-                    "remote_address": remote_address,
-                    "remote_port": connection.get("remote_port").cloned().unwrap_or(Value::Null),
-                    "local_address": local_address,
-                    "local_port": local_port
-                },
-                "next_check": "Verify signer, hash, domain ownership, execution origin, and related persistence evidence."
+                "classification": "user_writable_process_public_connection_observed",
+                "interpretation": "An outbound connection from a user profile is not by itself evidence of malware or a security weakness.",
+                "pid": pid,
+                "process_name": process_name,
+                "process_path": path,
+                "remote_address": remote_address,
+                "remote_port": connection.get("remote_port").cloned().unwrap_or(Value::Null),
+                "local_address": local_address,
+                "local_port": local_port
             }));
         }
     }
@@ -1460,5 +1461,57 @@ mod tests {
         assert_eq!(report["observations"][0]["resolved_address"], "127.0.0.1");
         assert_eq!(report["observations"][0]["port"], 443);
         assert_eq!(report["claim_policy"]["vulnerability_confirmed"], false);
+    }
+
+    #[test]
+    fn public_connection_from_user_profile_is_context_without_a_threat_claim() {
+        let report = build_report(
+            &json!({
+                "success": true,
+                "collection_status": "complete",
+                "processes": [{"pid": 42, "path": "C:\\Users\\Test\\AppData\\Local\\Game\\game.exe"}],
+                "tcp_connections": [{
+                    "owning_process": 42,
+                    "state": "Established",
+                    "local_address": "192.168.1.9",
+                    "local_port": 54000,
+                    "remote_address": "8.8.8.8",
+                    "remote_port": 443
+                }],
+                "totals": {}
+            }),
+            &[],
+            &options(Focus::Full),
+        );
+        assert_eq!(report["summary"]["findings"], 0);
+        assert_eq!(report["summary"]["observations"], 1);
+        assert_eq!(report["observations"][0]["remote_address"], "8.8.8.8");
+        assert_eq!(
+            report["observations"][0]["process_path"],
+            "C:\\Users\\Test\\AppData\\Local\\Game\\game.exe"
+        );
+        assert_eq!(report["claim_policy"]["malware_confirmed"], false);
+    }
+
+    #[test]
+    fn protected_listener_preserves_known_process_name_when_path_is_hidden() {
+        let report = build_report(
+            &json!({
+                "success": true,
+                "collection_status": "complete",
+                "processes": [{"pid": 4, "name": "System", "path": null}],
+                "tcp_connections": [{
+                    "owning_process": 4,
+                    "state": "Listen",
+                    "local_address": "::",
+                    "local_port": 445
+                }],
+                "totals": {}
+            }),
+            &[],
+            &options(Focus::Full),
+        );
+        assert_eq!(report["observations"][0]["process_name"], "System");
+        assert_eq!(report["observations"][0]["process_path"], "");
     }
 }

@@ -54,7 +54,7 @@ NAMES=(
   axios-developer-credential-view
 )
 
-for command in cargo file sha256sum zip unzip mktemp; do
+for command in cargo file sha256sum zip unzip mktemp base64 sed; do
   command -v "$command" >/dev/null ||
     { echo "AXIOS_RELEASE_BUILD_ERROR=missing_command:$command"; exit 1; }
 done
@@ -76,7 +76,7 @@ TEMP_DIR="$(mktemp -d)"
 PACKAGE_NAME="axios-windows-investigation"
 ROOT="$TEMP_DIR/$PACKAGE_NAME"
 BIN="$ROOT/bin"
-OUT="$OUTPUT_DIR/$PACKAGE_NAME.zip"
+OUT="$OUTPUT_DIR/$PACKAGE_NAME.cmd"
 ARCHIVE="$TEMP_DIR/$PACKAGE_NAME.zip"
 
 cleanup() {
@@ -127,15 +127,21 @@ cp "$PROJECT_ROOT/installer/windows/Run-AXIOS.ps1" \
 
 cp "$PROJECT_ROOT/installer/windows/axios.ps1" \
   "$ROOT/axios.ps1"
+cp "$PROJECT_ROOT/installer/windows/axios.cmd" \
+  "$ROOT/axios.cmd"
 
 
 cp "$PROJECT_ROOT/installer/windows/Run-AXIOS-Layer.ps1" \
   "$ROOT/scripts/Run-AXIOS-Layer.ps1"
+cp "$PROJECT_ROOT/installer/windows/Write-AXIOS-Terminal-Results.ps1" \
+  "$ROOT/scripts/Write-AXIOS-Terminal-Results.ps1"
 
 cp "$PROJECT_ROOT/installer/windows/AXIOS-COMMANDS.txt" \
   "$ROOT/AXIOS-COMMANDS.txt"
 
 cp "$PROJECT_ROOT/README.md" "$ROOT/README.md"
+cp "$PROJECT_ROOT/Commands.md" "$ROOT/Commands.md"
+cp "$PROJECT_ROOT/Changelog.md" "$ROOT/Changelog.md"
 cp "$PROJECT_ROOT/LICENSE" "$ROOT/LICENSE"
 
 UNIX_HOME_PREFIX="/""home/"
@@ -149,9 +155,12 @@ fi
   sha256sum \
     bin/*.exe \
     axios.ps1 \
+    axios.cmd \
     scripts/*.ps1 \
     AXIOS-COMMANDS.txt \
     README.md \
+    Commands.md \
+    Changelog.md \
     LICENSE \
     > SHA256SUMS.txt
 )
@@ -162,8 +171,13 @@ fi
 )
 
 unzip -t "$ARCHIVE" >/dev/null
-mv -f "$ARCHIVE" "$OUT"
+{
+  cat "$PROJECT_ROOT/installer/windows/axios-unzip.cmd"
+  printf ':AXIOS_ARCHIVE_BASE64\n'
+  base64 "$ARCHIVE" | sed 's/^/::/'
+} > "$TEMP_DIR/$PACKAGE_NAME.cmd"
+mv -f "$TEMP_DIR/$PACKAGE_NAME.cmd" "$OUT"
 
 echo "AXIOS_RELEASE_BUILD_PASS=true"
 echo "BINARIES_PACKAGED=${#NAMES[@]}"
-echo "ZIP=$OUT"
+echo "SELF_EXTRACTING_PACKAGE=$OUT"

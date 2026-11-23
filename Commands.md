@@ -33,31 +33,25 @@ How to extract, start, and use every supported AXIOS investigation mode.
 
 - Windows
 - Windows PowerShell
-- The official `axios-windows-investigation.zip` release package
+- The official `axios-windows-investigation.cmd` release package
 - Administrator PowerShell, **only** for `Administrator` mode
 - Authorization to investigate the system or network target
 
-AXIOS needs **no installation**. Extract the package, allow AXIOS for the current PowerShell process, and run `axios.ps1` normally.
+AXIOS needs **no installation**. The downloaded file contains the package and extracts it with a progress bar; run `axios.cmd` in CMD or PowerShell afterward. The `axios.ps1` entrypoint remains available for PowerShell.
 
 ---
 
 ## Extract and start
 
-1. Download `axios-windows-investigation.zip` from **GitHub Releases** and place it in your `Downloads` folder.
-2. Open PowerShell and run:
+1. For the next-release candidate, build the single `axios-windows-investigation.cmd` file into `Downloads`. The currently published `2026.9.27` release still uses a ZIP.
+2. Run the file. It shows inline extraction progress and returns to the terminal when complete.
+
+Or open PowerShell and run this short command from Downloads:
 
 ```powershell
-$Zip  = "$env:USERPROFILE\Downloads\axios-windows-investigation.zip"
-$Root = "$env:USERPROFILE\Downloads\AXIOS"
-
-Expand-Archive -LiteralPath $Zip -DestinationPath $Root -Force
-Set-Location "$Root\axios-windows-investigation"
-
-# Allows AXIOS in this PowerShell window only. It does not change
-# the computer's execution-policy settings.
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-
-.\axios.ps1 -Mode Help
+& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
+.\axios.cmd -Mode Help
 ```
 
 Example extracted package directory:
@@ -78,22 +72,26 @@ Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 
 | Command | Admin? | Purpose |
 |---|:---:|---|
-| `.\axios.ps1 -Mode Help` | No | Show commands and parameters |
-| `.\axios.ps1 -Mode User` | No | Standard-user security assessment |
-| `.\axios.ps1 -Mode Administrator` | **Yes** | Complete 42-stage investigation |
-| `.\axios.ps1 -Mode System` | No | System and security posture |
-| `.\axios.ps1 -Mode Network` | No | Network security assessment |
-| `.\axios.ps1 -Mode Persistence` | No | Persistence assessment |
-| `.\axios.ps1 -Mode Software` | No | Software and update assessment |
-| `.\axios.ps1 -Mode Results` | No | Show the latest session result |
+| `.\axios.cmd -Mode User` | No | Standard-user assessment |
+| `.\axios.cmd -Mode User -Focus System` | No | Focused system assessment |
+| `.\axios.cmd -Mode User -Focus SystemQuick` | No | Focused quick system review |
+| `.\axios.cmd -Mode User -Focus SystemContext` | No | Time, locale and network context |
+| `.\axios.cmd -Mode User -Focus Persistence` | No | Persistence assessment |
+| `.\axios.cmd -Mode User -Focus Software` | No | Software and updates |
+| `.\axios.cmd -Mode Network` | No | Network assessment |
+| `.\axios.cmd -Mode Administrator` | **Yes** | Complete 42-stage investigation |
+| `.\axios.cmd -Mode Results` | No | Reopen the latest result |
+| `.\axios.cmd -Mode Help` | No | Show command reference |
 
-**Developer commands** (hidden from public Help):
+Developer commands (hidden from public Help):
 
-| Command | Admin? | Purpose |
-|---|:---:|---|
-| `.\axios.ps1 -Mode DeveloperExposure` | No | Advanced exposure assessment |
-| `.\axios.ps1 -Mode DeveloperCredential` | No | Display the active Wi-Fi credential |
-| `.\axios.ps1 -Mode DeveloperArchive` | No | Decrypt an AXIOS credential archive |
+| Command | Purpose |
+|---|---|
+| `.\axios.cmd -Mode DeveloperExposure` | Advanced exposure assessment |
+| `.\axios.cmd -Mode DeveloperCredential` | Show the connected Wi-Fi credential |
+| `.\axios.cmd -Mode DeveloperCredential -Decrypt` | Open an encrypted credential archive |
+
+Legacy System, Persistence, Software and DeveloperArchive modes still work.
 
 ---
 
@@ -351,7 +349,7 @@ Shows the latest completed assessment from the **current PowerShell session**. R
 
 Results separates verified security findings, review items, forensic visibility, context observations, collection coverage, unresolved verification, and next-best checks.
 
-> If PowerShell is closed, unsaved session-only results are gone.
+> PowerShell session-only results expire when the window closes. CMD caches results in the current user profile and removes entries older than one day.
 
 ![Results summary](docs/images/results-summary.jpg)
 
@@ -424,7 +422,7 @@ Output appears in the terminal under **`ENCRYPTED CREDENTIAL ARCHIVE`**. No plai
 
 ## Saving evidence
 
-Without `-Save`, evidence exists only during the current PowerShell session.
+Without `-Save`, PowerShell keeps evidence for the current session. CMD keeps a user-profile result cache and removes entries older than one day.
 
 ```powershell
 .\axios.ps1 -Mode User -Save
@@ -523,14 +521,11 @@ Run `Results` in the **same** PowerShell session, or use `-Save` to retain artif
 
 ### Package integrity failure
 
-Re-extract the official ZIP into a clean folder. Never run AXIOS from an incomplete extraction.
+Move the existing `Downloads\AXIOS` folder aside, then extract the official package again. Never run AXIOS from an incomplete extraction.
 
 ```powershell
-$Zip  = "$env:USERPROFILE\Downloads\axios-windows-investigation.zip"
-$Root = "$env:USERPROFILE\Downloads\AXIOS-Clean"
-
-Expand-Archive -LiteralPath $Zip -DestinationPath $Root -Force
-Set-Location "$Root\axios-windows-investigation"
+& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 
 .\axios.ps1 -Mode Help
 ```

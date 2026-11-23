@@ -64,6 +64,7 @@ function Resolve-AxiosManifestMessage {{
 
         $Messages = Get-Content `
             -LiteralPath $MessagesPath `
+            -Encoding UTF8 `
             -Raw `
             -ErrorAction Stop |
                 ConvertFrom-Json -ErrorAction Stop
@@ -190,7 +191,7 @@ $roots = @(
                     continue
                 }}
 
-                $manifest = Get-Content -LiteralPath $manifestPath -Raw -ErrorAction Stop |
+                $manifest = Get-Content -LiteralPath $manifestPath -Encoding UTF8 -Raw -ErrorAction Stop |
                     ConvertFrom-Json -ErrorAction Stop
 
                 $ResolvedName = Resolve-AxiosManifestMessage `

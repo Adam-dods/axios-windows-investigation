@@ -127,6 +127,21 @@ $Failure = Join-Path $Output "failure.txt"
 
 $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
+function Write-AxiosProgress {
+    param([int]$Stage, [string]$Name)
+    # Stages have different durations; this percentage counts completed stages.
+    $percent = [int][Math]::Floor((($Stage - 1) / 42.0) * 100)
+    $filled = [int][Math]::Floor(($percent / 100.0) * 24)
+    $bar = ('#' * $filled) + ('-' * (24 - $filled))
+    $label = $Name -replace '^AXIOS ', ''
+    $width = 100
+    try { $width = [Math]::Max(64, [Console]::WindowWidth - 1) } catch {}
+    $prefix = ('AXIOS {0,2}/42 {1,3}% [{2}] ' -f $Stage, $percent, $bar)
+    $available = [Math]::Max(0, $width - $prefix.Length)
+    if ($label.Length -gt $available) { $label = $label.Substring(0, $available) }
+    Write-Host -NoNewline ("`r" + ($prefix + $label).PadRight($width))
+}
+
 function Test-IsAdministrator {
     $Identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $Principal = New-Object Security.Principal.WindowsPrincipal($Identity)
@@ -305,7 +320,25 @@ function Invoke-AxiosJson {
     $Process = New-Object System.Diagnostics.Process
     $Process.StartInfo = $StartInfo
 
-    if (-not $Process.Start()) {
+    try {
+        $Started = $Process.Start()
+    }
+    catch {
+        $NativeError = $_.Exception.InnerException
+        if (
+            $NativeError -is [ComponentModel.Win32Exception] -and
+            $NativeError.NativeErrorCode -in @(577, 1260)
+        ) {
+            throw (
+                "Windows application control blocked AXIOS executable: " +
+                $FilePath + ". Check CodeIntegrity event 3077 and the " +
+                "Windows Security app-control setting. AXIOS cannot " +
+                "override a Windows policy."
+            )
+        }
+        throw
+    }
+    if (-not $Started) {
         throw "AXIOS process could not be started: $FilePath"
     }
 
@@ -498,7 +531,7 @@ New-Item `
 Test-AxiosHashes
 
 try {
-    Write-Host "[1/42] AXIOS registry persistence"
+    Write-AxiosProgress -Stage 1 -Name "AXIOS registry persistence"
 
     $RegistryPersistencePath = Join-Path `
         $Output `
@@ -509,7 +542,7 @@ try {
         -Arguments @("registry-persistence") `
         -Destination $RegistryPersistencePath
 
-    Write-Host "[2/42] AXIOS extended persistence"
+    Write-AxiosProgress -Stage 2 -Name "AXIOS extended persistence"
 
     $ExtendedPersistencePath = Join-Path `
         $Output `
@@ -549,7 +582,7 @@ try {
         -Value $CombinedPersistence `
         -Depth 40
 
-    Write-Host "[3/42] AXIOS live activity"
+    Write-AxiosProgress -Stage 3 -Name "AXIOS live activity"
 
     $LiveActivityPath = Join-Path `
         $Output `
@@ -560,7 +593,7 @@ try {
         -Arguments @("live-activity") `
         -Destination $LiveActivityPath
 
-    Write-Host "[4/42] AXIOS process integrity"
+    Write-AxiosProgress -Stage 4 -Name "AXIOS process integrity"
 
     $ProcessIntegrityPath = Join-Path `
         $Output `
@@ -576,7 +609,7 @@ try {
         ) `
         -Destination $ProcessIntegrityPath
 
-    Write-Host "[5/42] AXIOS runtime CPU and memory review"
+    Write-AxiosProgress -Stage 5 -Name "AXIOS runtime CPU and memory review"
     $RuntimeResourceReviewPath = Join-Path $Output "runtime-resource-review.json"
     $RuntimeResourceReviewReport = Invoke-AxiosJson `
         -FilePath $RuntimeResourceReview `
@@ -586,21 +619,21 @@ try {
         ) `
         -Destination $RuntimeResourceReviewPath
 
-    Write-Host "[6/42] AXIOS telemetry integrity review"
+    Write-AxiosProgress -Stage 6 -Name "AXIOS telemetry integrity review"
     $TelemetryIntegrityReviewPath = Join-Path $Output "telemetry-integrity-review.json"
     $TelemetryIntegrityReviewReport = Invoke-AxiosJson `
         -FilePath $TelemetryIntegrityReview `
         -Arguments @("--collection-scope", "current") `
         -Destination $TelemetryIntegrityReviewPath
 
-    Write-Host "[7/42] AXIOS privileged execution surface review"
+    Write-AxiosProgress -Stage 7 -Name "AXIOS privileged execution surface review"
     $PrivilegeSurfaceReviewPath = Join-Path $Output "privilege-surface-review.json"
     $PrivilegeSurfaceReviewReport = Invoke-AxiosJson `
         -FilePath $PrivilegeSurfaceReview `
         -Arguments @("--max-items", "512") `
         -Destination $PrivilegeSurfaceReviewPath
 
-    Write-Host "[8/42] AXIOS hardware trust"
+    Write-AxiosProgress -Stage 8 -Name "AXIOS hardware trust"
 
     $HardwareTrustPath = Join-Path `
         $Output `
@@ -611,7 +644,7 @@ try {
         -Arguments @("hardware-trust") `
         -Destination $HardwareTrustPath
 
-    Write-Host "[9/42] AXIOS kernel posture"
+    Write-AxiosProgress -Stage 9 -Name "AXIOS kernel posture"
 
     $KernelPosturePath = Join-Path `
         $Output `
@@ -636,7 +669,7 @@ try {
         ) `
         -Destination $KernelReviewPath
 
-    Write-Host "[10/42] AXIOS loaded driver trust"
+    Write-AxiosProgress -Stage 10 -Name "AXIOS loaded driver trust"
 
     $DriverTrustPath = Join-Path `
         $Output `
@@ -664,7 +697,7 @@ try {
         ) `
         -Destination $TrustReviewPath
 
-    Write-Host "[11/42] AXIOS browser extensions"
+    Write-AxiosProgress -Stage 11 -Name "AXIOS browser extensions"
 
     $BrowserExtensionsPath = Join-Path `
         $Output `
@@ -675,7 +708,7 @@ try {
         -Arguments @("browser-extensions") `
         -Destination $BrowserExtensionsPath
 
-    Write-Host "[12/42] AXIOS access surface"
+    Write-AxiosProgress -Stage 12 -Name "AXIOS access surface"
 
     $AccessSurfacePath = Join-Path `
         $Output `
@@ -686,7 +719,7 @@ try {
         -Arguments @("access-surface") `
         -Destination $AccessSurfacePath
 
-    Write-Host "[13/42] AXIOS network posture"
+    Write-AxiosProgress -Stage 13 -Name "AXIOS network posture"
 
     $NetworkPosturePath = Join-Path `
         $Output `
@@ -706,7 +739,7 @@ try {
         -Arguments @("context-posture") `
         -Destination $ContextPosturePath
 
-    Write-Host "[14/42] AXIOS network exposure"
+    Write-AxiosProgress -Stage 14 -Name "AXIOS network exposure"
 
     $NetworkExposurePath = Join-Path `
         $Output `
@@ -724,7 +757,7 @@ try {
         ) `
         -Destination $NetworkExposurePath
 
-    Write-Host "[15/42] AXIOS security posture"
+    Write-AxiosProgress -Stage 15 -Name "AXIOS security posture"
 
     $SecurityPosturePath = Join-Path `
         $Output `
@@ -735,7 +768,7 @@ try {
         -Arguments @("security-posture") `
         -Destination $SecurityPosturePath
 
-    Write-Host "[16/42] AXIOS security review"
+    Write-AxiosProgress -Stage 16 -Name "AXIOS security review"
 
     $SecurityReviewPath = Join-Path `
         $Output `
@@ -746,7 +779,7 @@ try {
         -Arguments @("security-review") `
         -Destination $SecurityReviewPath
 
-    Write-Host "[17/42] AXIOS health posture"
+    Write-AxiosProgress -Stage 17 -Name "AXIOS health posture"
 
     $HealthPosturePath = Join-Path `
         $Output `
@@ -757,7 +790,7 @@ try {
         -Arguments @("health-posture") `
         -Destination $HealthPosturePath
 
-    Write-Host "[18/42] AXIOS software inventory and update exposure"
+    Write-AxiosProgress -Stage 18 -Name "AXIOS software inventory and update exposure"
 
     $SoftwareInventoryPath = Join-Path `
         $Output `
@@ -777,7 +810,7 @@ try {
         -Arguments @("updates") `
         -Destination $UpdateExposurePath
 
-    Write-Host "[19/42] AXIOS event correlation"
+    Write-AxiosProgress -Stage 19 -Name "AXIOS event correlation"
 
     $EventCorrelationPath = Join-Path `
         $Output `
@@ -792,7 +825,7 @@ try {
         ) `
         -Destination $EventCorrelationPath
 
-    Write-Host "[20/42] AXIOS deep investigation"
+    Write-AxiosProgress -Stage 20 -Name "AXIOS deep investigation"
 
     $DeepInvestigationPath = Join-Path `
         $Output `
@@ -803,7 +836,7 @@ try {
         -Arguments @("deep-investigation") `
         -Destination $DeepInvestigationPath
 
-    Write-Host "[21/42] AXIOS universal file audit"
+    Write-AxiosProgress -Stage 21 -Name "AXIOS universal file audit"
 
     $AuditPath = Join-Path `
         $Output `
@@ -825,7 +858,7 @@ try {
         ) `
         -Destination $AuditPath
 
-    Write-Host "[22/42] AXIOS application investigation and evidence correlation"
+    Write-AxiosProgress -Stage 22 -Name "AXIOS application investigation and evidence correlation"
 
     $ApplicationPath = Join-Path `
         $Output `
@@ -855,14 +888,14 @@ try {
         ) `
         -Destination $CorrelationPath
 
-Write-Host "[23/42] AXIOS network service review"
+Write-AxiosProgress -Stage 23 -Name "AXIOS network service review"
     $NetworkServiceReviewPath = Join-Path $Output "network-service-review.json"
     $NetworkServiceReviewReport = Invoke-AxiosJson `
         -FilePath (Join-Path $Bin "axios-network-service-review.exe") `
         -Arguments @("--network-exposure", $NetworkExposurePath, "--max-rules", "1024") `
         -Destination $NetworkServiceReviewPath
 
-    Write-Host "[24/42] AXIOS memory execution review"
+    Write-AxiosProgress -Stage 24 -Name "AXIOS memory execution review"
     $MemoryExecutionReviewPath = Join-Path $Output "memory-execution-review.json"
     $MemoryExecutionReviewReport = Invoke-AxiosJson `
         -FilePath $MemoryExecutionReview `
@@ -875,7 +908,7 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $MemoryExecutionReviewPath
 
-    Write-Host "[25/42] AXIOS network identity and egress review"
+    Write-AxiosProgress -Stage 25 -Name "AXIOS network identity and egress review"
     $NetworkIdentityReviewPath = Join-Path $Output "network-identity-review.json"
     $NetworkIdentityReviewReport = Invoke-AxiosJson `
         -FilePath $NetworkIdentityReview `
@@ -885,7 +918,7 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $NetworkIdentityReviewPath
 
-    Write-Host "[26/42] AXIOS deep network evidence review"
+    Write-AxiosProgress -Stage 26 -Name "AXIOS deep network evidence review"
     $NetworkDeepReviewPath = Join-Path $Output "network-deep-review.json"
     $NetworkDeepReviewReport = Invoke-AxiosJson `
         -FilePath $NetworkDeepReview `
@@ -902,7 +935,7 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $NetworkDeepReviewPath
 
-    Write-Host "[27/42] AXIOS boot chain review"
+    Write-AxiosProgress -Stage 27 -Name "AXIOS boot chain review"
     $BootChainReviewPath = Join-Path $Output "boot-chain-review.json"
     $BootChainReviewReport = Invoke-AxiosJson `
         -FilePath (Join-Path $Bin "axios-boot-chain-review.exe") `
@@ -912,7 +945,7 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $BootChainReviewPath
 
-    Write-Host "[28/42] AXIOS Code Integrity investigation"
+    Write-AxiosProgress -Stage 28 -Name "AXIOS Code Integrity investigation"
     $CodeIntegrityInvestigationPath = Join-Path $Output "code-integrity-investigation.json"
     $CodeIntegrityInvestigationReport = Invoke-AxiosJson `
         -FilePath (Join-Path $Bin "axios-code-integrity-investigation.exe") `
@@ -923,7 +956,7 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $CodeIntegrityInvestigationPath
 
-    Write-Host "[29/42] AXIOS kernel runtime integrity review"
+    Write-AxiosProgress -Stage 29 -Name "AXIOS kernel runtime integrity review"
     $KernelRuntimeIntegrityPath = Join-Path $Output "kernel-runtime-integrity.json"
     $KernelRuntimeIntegrityReport = Invoke-AxiosJson `
         -FilePath $KernelRuntimeIntegrity `
@@ -936,7 +969,7 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $KernelRuntimeIntegrityPath
 
-    Write-Host "[30/42] AXIOS firmware identity and collection confidence review"
+    Write-AxiosProgress -Stage 30 -Name "AXIOS firmware identity and collection confidence review"
     $FirmwareIdentityReviewPath = Join-Path $Output "firmware-identity-review.json"
     $FirmwareIdentityReviewReport = Invoke-AxiosJson `
         -FilePath $FirmwareIdentityReview `
@@ -946,7 +979,7 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $FirmwareIdentityReviewPath
 
-    Write-Host "[31/42] AXIOS Defender evidence review"
+    Write-AxiosProgress -Stage 31 -Name "AXIOS Defender evidence review"
     $DefenderEvidencePath = Join-Path $Output "defender-evidence.json"
 
     $DefenderEvidenceReport = Invoke-AxiosJson `
@@ -954,7 +987,7 @@ Write-Host "[23/42] AXIOS network service review"
         -Arguments @("--days", "30", "--max-events", "500") `
         -Destination $DefenderEvidencePath
 
-    Write-Host "[32/42] AXIOS collection integrity and contradiction review"
+    Write-AxiosProgress -Stage 32 -Name "AXIOS collection integrity and contradiction review"
     $CollectionIntegrityReviewPath = Join-Path $Output "collection-integrity-review.json"
     $CollectionIntegrityReviewReport = Invoke-AxiosJson `
         -FilePath $CollectionIntegrityReview `
@@ -968,43 +1001,43 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $CollectionIntegrityReviewPath
 
-    Write-Host "[33/42] AXIOS security controls review"
+    Write-AxiosProgress -Stage 33 -Name "AXIOS security controls review"
     $SecurityControlsReviewPath = Join-Path $Output "security-controls-review.json"
     $SecurityControlsReviewReport = Invoke-AxiosJson `
         -FilePath $SecurityControlsReview `
         -Destination $SecurityControlsReviewPath
 
-    Write-Host "[34/42] AXIOS remote access review"
+    Write-AxiosProgress -Stage 34 -Name "AXIOS remote access review"
     $RemoteAccessReviewPath = Join-Path $Output "remote-access-review.json"
     $RemoteAccessReviewReport = Invoke-AxiosJson `
         -FilePath $RemoteAccessReview `
         -Destination $RemoteAccessReviewPath
 
-    Write-Host "[35/42] AXIOS execution policy and audit visibility review"
+    Write-AxiosProgress -Stage 35 -Name "AXIOS execution policy and audit visibility review"
     $ExecutionPolicyReviewPath = Join-Path $Output "execution-policy-review.json"
     $ExecutionPolicyReviewReport = Invoke-AxiosJson `
         -FilePath $ExecutionPolicyReview `
         -Destination $ExecutionPolicyReviewPath
 
-    Write-Host "[36/42] AXIOS identity and credential access review"
+    Write-AxiosProgress -Stage 36 -Name "AXIOS identity and credential access review"
     $IdentityAccessReviewPath = Join-Path $Output "identity-access-review.json"
     $IdentityAccessReviewReport = Invoke-AxiosJson `
         -FilePath $IdentityAccessReview `
         -Destination $IdentityAccessReviewPath
 
-    Write-Host "[37/42] AXIOS platform hardening review"
+    Write-AxiosProgress -Stage 37 -Name "AXIOS platform hardening review"
     $PlatformHardeningReviewPath = Join-Path $Output "platform-hardening-review.json"
     $PlatformHardeningReviewReport = Invoke-AxiosJson `
         -FilePath $PlatformHardeningReview `
         -Destination $PlatformHardeningReviewPath
 
-    Write-Host "[38/42] AXIOS administrator exposure audit"
+    Write-AxiosProgress -Stage 38 -Name "AXIOS administrator exposure audit"
     $AdminExposureAuditPath = Join-Path $Output "administrator-exposure-audit.json"
     $AdminExposureAuditReport = Invoke-AxiosJson `
         -FilePath $AdminExposureAudit `
         -Destination $AdminExposureAuditPath
 
-    Write-Host "[39/42] AXIOS virtualization boundary review"
+    Write-AxiosProgress -Stage 39 -Name "AXIOS virtualization boundary review"
     $VirtualizationBoundaryReviewPath = Join-Path $Output "virtualization-boundary-review.json"
     $VirtualizationBoundaryReviewReport = Invoke-AxiosJson `
         -FilePath $VirtualizationBoundaryReview `
@@ -1079,14 +1112,14 @@ Write-Host "[23/42] AXIOS network service review"
         -Value $Summary `
         -Depth 20
 
-    Write-Host "[40/42] AXIOS cross-source observation integrity review"
+    Write-AxiosProgress -Stage 40 -Name "AXIOS cross-source observation integrity review"
     $ObservationIntegrityReviewPath = Join-Path $Output "observation-integrity-review.json"
     $ObservationIntegrityReviewReport = Invoke-AxiosJson `
         -FilePath $ObservationIntegrityReview `
         -Arguments @("--processes", $ProcessIntegrityPath) `
         -Destination $ObservationIntegrityReviewPath
 
-    Write-Host "[41/42] AXIOS persistent investigation state"
+    Write-AxiosProgress -Stage 41 -Name "AXIOS persistent investigation state"
 
     $StatePath = Join-Path `
         $Output `
@@ -1198,7 +1231,7 @@ Write-Host "[23/42] AXIOS network service review"
         ) `
         -Destination $PersistenceExecutionPath
 
-    Write-Host "[42/42] AXIOS Reasoning Web and response plan"
+    Write-AxiosProgress -Stage 42 -Name "AXIOS Reasoning Web and response plan"
     $ReasoningWebPath = Join-Path $Output "reasoning-web.json"
     $ReasoningWebReport = Invoke-AxiosJson `
         -FilePath $ReasoningWeb `
@@ -2002,6 +2035,8 @@ Write-Host "[23/42] AXIOS network service review"
         [Text.UTF8Encoding]::new($false)
     )
 
+    Write-Host ("`rAXIOS 42/42 100% [{0}] completed" -f ('#' * 24))
+    if ($env:AXIOS_TABLE_OUTPUT -ne "1") {
     Write-Host ""
     $CompleteHeading = "COMPREHENSIVE SECURITY INVESTIGATION"
     Write-Host $CompleteHeading
@@ -2067,6 +2102,7 @@ Write-Host "[23/42] AXIOS network service review"
     }
 
     Write-Host ""
+    }
 
     if ($env:AXIOS_CONSOLE_SESSION -ne "1") {
         [PSCustomObject]@{
@@ -2086,6 +2122,7 @@ Write-Host "[23/42] AXIOS network service review"
     }
 }
 catch {
+    Write-Host ''
     Write-AxiosText `
         -Path $Failure `
         -Text ($_ | Out-String)

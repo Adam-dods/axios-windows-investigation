@@ -9,12 +9,12 @@ fn final_reviews_run_before_success() {
         .unwrap();
 
     for stage in [
-        "[23/42] AXIOS network service review",
-        "[26/42] AXIOS deep network evidence review",
-        "[27/42] AXIOS boot chain review",
-        "[28/42] AXIOS Code Integrity investigation",
-        "[41/42] AXIOS persistent investigation state",
-        "[42/42] AXIOS Reasoning Web and response plan",
+        r#"Write-AxiosProgress -Stage 23 -Name "AXIOS network service review""#,
+        r#"Write-AxiosProgress -Stage 26 -Name "AXIOS deep network evidence review""#,
+        r#"Write-AxiosProgress -Stage 27 -Name "AXIOS boot chain review""#,
+        r#"Write-AxiosProgress -Stage 28 -Name "AXIOS Code Integrity investigation""#,
+        r#"Write-AxiosProgress -Stage 41 -Name "AXIOS persistent investigation state""#,
+        r#"Write-AxiosProgress -Stage 42 -Name "AXIOS Reasoning Web and response plan""#,
     ] {
         assert!(SCRIPT.find(stage).unwrap() < success, "{stage}");
     }
@@ -90,8 +90,10 @@ fn console_complete_hides_temporary_paths_and_machine_receipt() {
 
 #[test]
 fn complete_progress_numbers_every_collector() {
-    assert!(COMPLETE.contains("[31/42] AXIOS Defender evidence review"));
-    assert!(COMPLETE.contains("[32/42] AXIOS collection integrity and contradiction review"));
-    assert!(COMPLETE.contains("[42/42]"));
+    assert!(
+        COMPLETE.contains("Write-AxiosProgress -Stage 31 -Name \"AXIOS Defender evidence review\"")
+    );
+    assert!(COMPLETE.contains("Write-AxiosProgress -Stage 32 -Name \"AXIOS collection integrity and contradiction review\""));
+    assert!(COMPLETE.contains("Write-AxiosProgress -Stage 42"));
     assert!(!COMPLETE.contains("/40]"));
 }

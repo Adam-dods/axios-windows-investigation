@@ -21,9 +21,10 @@ fn console_mode_is_restored_after_secret_input() {
 }
 
 #[test]
-fn developer_archive_uses_dynamic_headings_and_structured_output() {
+fn developer_archive_uses_structured_table_output() {
     assert!(CREDENTIAL.contains("fn print_heading"));
-    assert!(CREDENTIAL.contains("\"=\".repeat(title.chars().count())"));
+    assert!(CREDENTIAL.contains("fn print_table"));
+    assert!(CREDENTIAL.contains("Decrypted value"));
     assert!(CREDENTIAL.contains("serde_json::from_slice(&plaintext)"));
     assert!(!CREDENTIAL.contains("println!(\"{display}\")"));
 }
