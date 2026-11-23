@@ -1,571 +1,333 @@
 # AXIOS Command Guide
 
-How to extract, start, and use every supported AXIOS investigation mode.
+Run the investigation from one extracted package: **pick a mode → add a focus only if needed → review coverage → save evidence deliberately.**
 
-> **Select a mode. Choose an optional focus. Run. Review. Save only when needed.**
-
----
-
-## Contents
-
-- [Requirements](#requirements)
-- [Extract and start](#extract-and-start)
-- [Quick reference](#quick-reference)
-- [Choosing a mode](#choosing-a-mode)
-- [Help](#help)
-- [User](#user)
-- [Administrator](#administrator)
-- [System](#system)
-- [Network](#network)
-- [Persistence](#persistence)
-- [Software](#software)
-- [Results](#results)
-- [Developer commands](#developer-commands)
-- [Saving evidence](#saving-evidence)
-- [Parameters](#parameters)
-- [Understanding results](#understanding-results)
-- [Troubleshooting](#troubleshooting)
-- [Fastest safe starting points](#fastest-safe-starting-points)
+**Jump to:** [Setup](#setup) · [Cheat sheet](#cheat-sheet) · [Modes](#modes) · [Target checks](#authorized-target-checks) · [Developer commands](#developer-commands) · [Saving](#saving-evidence) · [Parameters](#parameters) · [Reading results](#reading-results) · [Troubleshooting](#troubleshooting)
 
 ---
 
-## Requirements
+## Setup
 
-- Windows
-- Windows PowerShell
-- The official `axios-windows-investigation.cmd` release package
-- Administrator PowerShell, **only** for `Administrator` mode
-- Authorization to investigate the system or network target
+**You need**
 
-AXIOS needs **no installation**. The downloaded file contains the package and extracts it with a progress bar; run `axios.cmd` in CMD or PowerShell afterward. The `axios.ps1` entrypoint remains available for PowerShell.
+- Windows with Windows PowerShell, and permission to investigate the device (or the explicit network target).
+- The [v2026.11.23 CMD asset](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23), not the source ZIP (the ZIP has no executables).
+- An **elevated** terminal only for `Administrator` mode.
 
----
+No installation is needed. The CMD extracts the package; afterwards use `axios.cmd` (CMD or PowerShell) or `axios.ps1` (PowerShell, same parameters).
 
-## Extract and start
+**Extract once**
 
-1. Download the `axios-windows-investigation.cmd` asset from the [v2026.11.23 release](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) into `Downloads`. Compare its SHA-256 with the value on that page before running it.
-2. Run the file. It shows inline extraction progress and returns to the terminal when complete.
-
-Or open PowerShell and run this short command from Downloads:
+Save `axios-windows-investigation.cmd` in Downloads, then in a standard PowerShell window:
 
 ```powershell
-& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+$File = "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+$Expected = '796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7'
+if ((Get-FileHash $File -Algorithm SHA256).Hash -ne $Expected) { throw 'AXIOS download checksum mismatch' }
+& $File
 Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 .\axios.cmd -Mode Help
 ```
 
-Example extracted package directory:
+Extraction shows progress and returns to the terminal **without starting an investigation**. In later sessions, skip the extractor and just `Set-Location` into the folder (in CMD: `cd %USERPROFILE%\Downloads\AXIOS\axios-windows-investigation`).
 
-```text
-C:\Users\TestUser\Downloads\AXIOS\axios-windows-investigation
-```
-
-In later sessions, return with:
-
-```powershell
-Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
-```
+> All commands below assume the extracted folder is your current directory.
+> The checksum checks that the download matches the published digest; it does not prove that the code is safe. Review or build from source if you need stronger assurance.
 
 ---
 
-## Quick reference
+## Cheat sheet
 
-| Command | Admin? | Purpose |
-|---|:---:|---|
-| `.\axios.cmd -Mode User` | No | Standard-user assessment |
-| `.\axios.cmd -Mode User -Focus System` | No | Focused system assessment |
-| `.\axios.cmd -Mode User -Focus SystemQuick` | No | Focused quick system review |
-| `.\axios.cmd -Mode User -Focus SystemContext` | No | Time, locale and network context |
-| `.\axios.cmd -Mode User -Focus Persistence` | No | Persistence assessment |
-| `.\axios.cmd -Mode User -Focus Software` | No | Software and updates |
-| `.\axios.cmd -Mode Network` | No | Network assessment |
-| `.\axios.cmd -Mode Administrator` | **Yes** | Complete 42-stage investigation |
-| `.\axios.cmd -Mode Results` | No | Reopen the latest result |
-| `.\axios.cmd -Mode Help` | No | Show command reference |
+| Goal | Command | Admin |
+|---|---|:-:|
+| See the interface | `.\axios.cmd -Mode Help` | – |
+| Standard-user assessment | `.\axios.cmd -Mode User` | – |
+| Quick system review | `.\axios.cmd -Mode User -Focus SystemQuick` | – |
+| Network assessment | `.\axios.cmd -Mode Network` | – |
+| TCP/UDP evidence | `.\axios.cmd -Mode Network -NetworkFocus connections` | – |
+| Full 42-stage investigation | `.\axios.cmd -Mode Administrator` | ✅ |
+| Reopen the latest result | `.\axios.cmd -Mode Results` | – |
 
-Developer commands (hidden from public Help):
+`axios.ps1` accepts the same public modes, e.g. `.\axios.ps1 -Mode User`.
 
-| Command | Purpose |
+**Which mode?**
+
+| I want to… | Mode |
 |---|---|
-| `.\axios.cmd -Mode DeveloperExposure` | Advanced exposure assessment |
-| `.\axios.cmd -Mode DeveloperCredential` | Show the connected Wi-Fi credential |
-| `.\axios.cmd -Mode DeveloperCredential -Decrypt` | Open an encrypted credential archive |
-
-Legacy System, Persistence, Software and DeveloperArchive modes still work.
+| list commands | `Help` |
+| check exposure with a normal account | `User` |
+| run the complete 42-stage investigation | `Administrator` |
+| inspect hardware, boot, kernel, controls | `System` *(legacy)* |
+| review adapters, DNS, listeners, connections | `Network` |
+| review startup and persistence | `Persistence` *(legacy)* |
+| review software and updates | `Software` *(legacy)* |
+| read the last completed assessment | `Results` |
 
 ---
 
-## Choosing a mode
+## Modes
 
-| I want to... | Use |
+### Help
+
+```powershell
+.\axios.cmd -Mode Help
+```
+
+Lists public modes, focus branches, parameters, privilege needs, and examples. Developer commands are intentionally omitted. Treat the Help shipped with your package as the reference for that build.
+
+### User
+
+```powershell
+.\axios.cmd -Mode User
+```
+
+Works in standard or elevated sessions. Examines user-visible processes, startup entries, accessible tasks and services, execution surfaces, network configuration, permissions visible to the token, and exposure evidence. Heading: `STANDARD USER SECURITY ASSESSMENT`.
+
+| Focus | Scope |
 |---|---|
-| See what AXIOS can do | `Help` |
-| Check my own exposure without admin | `User` |
-| Run the deepest possible investigation | `Administrator` |
-| Check hardware, boot, and kernel posture | `System` |
-| Review network config, listeners, connections | `Network` |
-| Look for startup and persistence mechanisms | `Persistence` |
-| Review installed software and updates | `Software` |
-| Re-read the last result | `Results` |
-
----
-
-## Help
+| `System` | Available system evidence |
+| `SystemQuick` | Short review of the most relevant controls |
+| `SystemContext` | Time, locale, network context that may explain other findings |
+| `Persistence` | Accessible persistence |
+| `Software` | Software and updates |
 
 ```powershell
-.\axios.ps1 -Mode Help
+.\axios.cmd -Mode User -Focus SystemQuick
 ```
 
-Displays public modes, focused System and Network branches, parameters, privilege requirements, and examples. Use it to confirm the interface included in **your** package.
+Protected evidence you can't reach is a **visibility limitation**, never proof of a clean system. A zero-finding result means nothing until you check collector coverage.
 
-![AXIOS command reference](docs/images/command-reference.png)
+### Administrator
 
-![Help modes overview](docs/images/help-modes-overview.png)
-
-![Help developer modes](docs/images/help-modes-developer.png)
-
----
-
-## User
+Open PowerShell **as Administrator**, return to the folder, then:
 
 ```powershell
-.\axios.ps1 -Mode User
+.\axios.cmd -Mode Administrator
 ```
 
-Runs from a normal or elevated session and reviews evidence available to the current Windows user:
+Runs 42 stages: persistence, execution, CPU/memory, hardware and firmware, kernel and drivers, network, Defender and controls, software, events, files, boot and Code Integrity, identity, integrity checks, correlation, Reasoning Web, and response planning. Progress counts `[1/42]` to `[42/42]`.
 
-- User-visible processes
-- Startup entries
-- Accessible scheduled tasks and services
-- User execution surfaces
-- Network configuration
-- File and registry permissions visible to the current token
-- User-level security exposure
+The final `COMPREHENSIVE SECURITY INVESTIGATION` summary contains:
 
-**Expected heading:** `STANDARD USER SECURITY ASSESSMENT`
-
-**Typical result fields:** Assessment status, Collectors completed, Security findings, Visibility limitations, Execution context.
-
-![Standard-user assessment](docs/images/standard-user-assessment.jpg)
-
-![User execution surface](docs/images/user-execution-surface.png)
-
-![User exposure coverage](docs/images/user-exposure-coverage.png)
-
-> Access restrictions are reported as visibility limitations. They are **not** proof that the restricted area is clean.
-
-```powershell
-.\axios.ps1 -Mode User -Save
-```
-
----
-
-## Administrator
-
-Open PowerShell with **Run as Administrator**, return to the AXIOS folder, then:
-
-```powershell
-.\axios.ps1 -Mode Administrator
-```
-
-This is the **complete** AXIOS investigation: 42 stages covering persistence, processes and live activity, runtime CPU and memory, hardware and firmware trust, kernel and driver trust, network posture and exposure, security controls, Defender, software and updates, event correlation, file and application investigation, boot and Code Integrity, identity and credential access, collection integrity, cross-source correlation, investigation state, Reasoning Web, and response planning.
-
-**Expected progress:**
-
-```text
-[1/42] ...
-[2/42] ...
-[42/42] ...
-```
-
-**Expected final heading:** `COMPREHENSIVE SECURITY INVESTIGATION`
-
-**Final summary includes:**
-
-| Group | Fields |
+| Group | Contents |
 |---|---|
-| **Run state** | Completion state, Reports observed, Reports failed, Reports partial |
-| **Findings** | High-priority findings, Medium findings, Raw context records, Collection errors |
-| **Reasoning** | Leading hypothesis, Hypothesis score, Independent sources, Contradictions, Unresolved facts, Next best checks |
+| Run state | Completion, observed / failed / partial reports |
+| Findings | High and medium findings, context, collection errors |
+| Reasoning | Leading hypothesis, sources, contradictions, unresolved facts |
+| Follow-up | Next checks grounded in collected evidence |
 
-![Administrator investigation](docs/images/administrator-investigation.png)
+Completed stages do **not** imply complete visibility.
 
-![Administrator investigation stages](docs/images/administrator-investigation-stages.png)
-
-![Administrator investigation summary](docs/images/administrator-investigation-summary.png)
-
-### Smart file audit
+**Smart file audit**
 
 ```powershell
-.\axios.ps1 -Mode Administrator -AuditMode smart -MaxFiles 5000
+.\axios.cmd -Mode Administrator -AuditMode smart -MaxFiles 5000
 ```
 
-Keeps the full investigation while selecting the smart file-audit behavior and a maximum file-candidate limit. A reached limit is reported as **partial coverage**, never hidden.
+`-AuditMode` is `fast` (default) or `smart`. `-MaxFiles` bounds candidates (1–25,000, default 1500). Reaching the limit is reported as partial coverage.
+
+### System *(legacy)*
+
+```powershell
+.\axios.cmd -Mode System -SystemFocus quick
+```
+
+Hardware trust, Secure Boot, TPM, BitLocker visibility, virtualization-based security, kernel and driver posture, controls, health, boot evidence. Heading: `SYSTEM SECURITY ASSESSMENT`.
+
+| `-SystemFocus` | Scope |
+|---|---|
+| `overview` | Broad posture |
+| `quick` | Important controls |
+| `context` | Supporting observations |
+
+A missing TPM, BitLocker, or protected kernel signal is reported with its collection status, never silently treated as absent.
+
+### Network
+
+```powershell
+.\axios.cmd -Mode Network
+```
+
+Adapters, IP configuration, DNS, routes, neighbors, firewall profiles and rules, Wi-Fi properties, TCP/UDP endpoints, listeners. Heading: `NETWORK SECURITY ASSESSMENT`. Default focus: `full`.
+
+| `-NetworkFocus` | Evidence |
+|---|---|
+| `overview` | Concise overview |
+| `services` | Listeners and service/process context |
+| `connections` | TCP connections and UDP endpoints |
+| `routing` | Routes, gateways, interfaces, neighbors |
+| `dns` | DNS configuration |
+| `firewall` | Profiles and available rules |
+| `wifi` | Active profile and connection properties |
+| `full` | Complete bounded view |
+
+Some firewall evidence needs elevation. If unavailable, AXIOS reports it (for example `not_attempted` with `administrator_required`); it never turns an unknown rule count into zero. Normal Network mode never shows the Wi-Fi password. A routine outbound connection can stay *context*; neither state alone is proof of compromise.
+
+### Persistence *(legacy)*
+
+```powershell
+.\axios.cmd -Mode Persistence
+```
+
+Registry Run entries, startup commands and folders, scheduled tasks, services, extended persistence, WMI permanent subscriptions. Groups: `ASSESSMENT COVERAGE`, `PERSISTENCE SURFACE`. An unavailable WMI or protected task source limits coverage; absence from a table is not proof that nothing persists there.
+
+### Software *(legacy)*
+
+```powershell
+.\axios.cmd -Mode Software
+```
+
+Installed software, update exposure, application posture, browser extensions. It never removes or updates anything. Results vary with permissions and Windows APIs, so check collection status when a source is missing.
+
+### Results
+
+```powershell
+.\axios.cmd -Mode User
+.\axios.cmd -Mode Results
+```
+
+Reopens the latest **completed** assessment and separates findings, review items, context, visibility, coverage, unresolved verification, and next checks. Heading: `SECURITY ASSESSMENT SUMMARY`.
+
+- `axios.cmd` keeps a per-user cache across CMD sessions and deletes entries older than one day.
+- Direct `axios.ps1` calls keep unsaved evidence only in the current PowerShell session, so run `Results` in the same session.
+- Running another mode changes what `Results` shows. Use `-Save` for anything you want to compare later.
 
 ---
 
-## System
-
-```powershell
-.\axios.ps1 -Mode System
-```
-
-**Expected heading:** `SYSTEM SECURITY ASSESSMENT`
-
-Reviews hardware trust, Secure Boot, TPM, BitLocker visibility, virtualization-based security, kernel posture, driver trust, security controls, system health, boot protections, and context observations.
-
-| Focus | Command | What it does |
-|---|---|---|
-| `overview` | `.\axios.ps1 -Mode System -SystemFocus overview` | Broad system-security overview |
-| `quick` | `.\axios.ps1 -Mode System -SystemFocus quick` | Focused review of important system-control evidence |
-| `context` | `.\axios.ps1 -Mode System -SystemFocus context` | Contextual evidence that may explain or support other findings |
-
-```powershell
-.\axios.ps1 -Mode System -Save
-```
-
-
-![System security assessment](docs/images/system-security-assessment.jpg)
-
----
-
-## Network
-
-```powershell
-.\axios.ps1 -Mode Network
-```
-
-**Expected heading:** `NETWORK SECURITY ASSESSMENT`
-
-Can review adapters, IP configuration, DNS, routes, neighbors, firewall profiles, firewall-rule visibility, wireless configuration, TCP connections, UDP endpoints, listening services, and security-relevant observations.
-
-![Network security assessment](docs/images/network-security-assessment.jpg)
-
-![Network observations](docs/images/network-observations.png)
-
-| Focus | Command | What it reviews |
-|---|---|---|
-| `overview` | `-NetworkFocus overview` | Concise network-security overview |
-| `services` | `-NetworkFocus services` | Listening services and process/service context |
-| `connections` | `-NetworkFocus connections` | Active TCP connections and UDP endpoints |
-| `routing` | `-NetworkFocus routing` | Routes, gateways, interfaces, neighbor evidence |
-| `dns` | `-NetworkFocus dns` | DNS configuration and DNS-related evidence |
-| `firewall` | `-NetworkFocus firewall` | Firewall profiles and available rule evidence |
-| `wifi` | `-NetworkFocus wifi` | Active wireless profile and connection properties |
-| `full` | `-NetworkFocus full` | The complete bounded Network view |
-
-Prefix each with `.\axios.ps1 -Mode Network`.
-
-### Firewall note
-
-Some firewall information requires Administrator. When it can't be collected, AXIOS reports:
-
-```text
-not collected
-not_attempted
-administrator_required
-```
-
-It never displays an unavailable rule count as zero.
-
-### Wi-Fi note
-
-Normal Network mode does **not** display the Wi-Fi password.
-
-### Explicit target and port checks
+## Authorized target checks
 
 ```powershell
 .\axios.ps1 -Mode Network -NetworkFocus connections -Target 192.0.2.10 -Ports 80,443
 .\axios.ps1 -Mode Network -NetworkFocus connections -Target server.example.invalid -Ports 443,8443
 ```
 
-Targets must be **explicit hostnames or IP addresses**. AXIOS rejects CIDR ranges, wildcards, whitespace, command-like input, invalid ports, port zero, and implicit network ranges.
+Supply explicit hostnames or IPs plus ports, and only for systems you own or are authorized to test. Use `axios.ps1` so PowerShell binds the comma-separated port array.
+
+`-Target` works only with `connections` (or legacy `targeted`). `-Ports` requires `-Target`.
 
 | Rejected input | Reason |
 |---|---|
 | `192.168.1.0/24` | CIDR range |
 | `192.168.*.*` | Wildcard |
 | `127.0.0.1 && whoami` | Command-like input |
-| `127.0.0.1;calc.exe` | Command-like input |
 | `$(whoami)` | Command-like input |
-| `0` | Invalid port |
-
-> Only perform target checks against systems you own or are authorized to assess.
-
-```powershell
-.\axios.ps1 -Mode Network -NetworkFocus full -Save
-```
-
----
-
-## Persistence
-
-```powershell
-.\axios.ps1 -Mode Persistence
-```
-
-**Expected heading:** `PERSISTENCE SECURITY ASSESSMENT`
-
-Reviews Registry Run entries, startup commands, startup folders, scheduled tasks, services, extended persistence sources, WMI permanent event subscriptions, and persistence collection coverage.
-
-**Typical result groups:** `ASSESSMENT COVERAGE`, `PERSISTENCE SURFACE`, `WMI PERSISTENCE SUBSCRIPTIONS`.
-
-![Persistence assessment](docs/images/persistence-assessment.jpg)
-
-![Persistence assessment overview](docs/images/persistence-assessment-overview.png)
-
-![Persistence assessment coverage](docs/images/persistence-assessment-coverage.png)
-
-> A `partial` result means at least one persistence capability could not be collected completely.
-
----
-
-## Software
-
-```powershell
-.\axios.ps1 -Mode Software
-```
-
-Reviews installed software, inventory, update exposure, application posture, browser-extension evidence, and software-related security observations.
-
-> It reports what it observes. It does **not** remove or update applications.
-
----
-
-## Results
-
-```powershell
-.\axios.ps1 -Mode Results
-```
-
-Shows the latest completed assessment from the **current PowerShell session**. Run it in the same session as the investigation:
-
-```powershell
-.\axios.ps1 -Mode User
-.\axios.ps1 -Mode Results
-```
-
-**Expected heading:** `SECURITY ASSESSMENT SUMMARY`
-
-Results separates verified security findings, review items, forensic visibility, context observations, collection coverage, unresolved verification, and next-best checks.
-
-> PowerShell session-only results expire when the window closes. CMD caches results in the current user profile and removes entries older than one day.
-
-![Results summary](docs/images/results-summary.jpg)
+| Port `0` | Invalid port |
 
 ---
 
 ## Developer commands
 
-Excluded from public Help and isolated from normal collection workflows.
+Isolated from normal assessments and hidden from Help. Use only on devices and networks you are authorized to inspect.
 
-### DeveloperExposure
-
-```powershell
-.\axios.ps1 -Mode DeveloperExposure
-```
-
-Runs from a standard or elevated session. **Heading:** `ADVANCED EXPOSURE ASSESSMENT`.
-
-Displays assessment status, collectors returned, observations (with high and medium severity counts), execution context, configuration exposures, and visibility limitations.
-
-> It reports evidence. It does **not** exploit discovered weaknesses.
-
-![Developer exposure assessment](docs/images/developer-exposure.png)
-
-![Developer exposure summary](docs/images/developer-exposure-summary.png)
-
-![Developer exposure findings](docs/images/developer-exposure-findings.png)
-
-### DeveloperCredential
-
-```powershell
-.\axios.ps1 -Mode DeveloperCredential
-```
-
-Runs from a standard session and shows the active Wi-Fi profile credential in the terminal. **Heading:** `PRIVATE NETWORK CREDENTIAL ACCESS`.
-
-**Displayed fields:** SSID, Authentication, Cipher, Wi-Fi password.
-
-AXIOS then asks:
-
-```text
-Save an encrypted copy? [Y/N]:
-```
-
-- **N** or Enter: no file is created.
-- **Y**: an encrypted `.dat` archive is created in Downloads.
-
-| Export property | Value |
+| Command | Purpose |
 |---|---|
-| Cipher | AES-256-GCM (authenticated) |
-| Key derivation | PBKDF2-SHA256, 200,000 iterations |
-| Archive identity | Random |
-| Plaintext file | None |
-| Minimum password | 12 bytes |
+| `.\axios.cmd -Mode DeveloperExposure` | Advanced exposure report (diagnostic; never exploits anything) |
+| `.\axios.cmd -Mode DeveloperCredential` | Show the connected Wi-Fi credential in the terminal |
+| `.\axios.cmd -Mode DeveloperCredential -Decrypt` | Select and decrypt a compatible archive |
 
-### DeveloperArchive
+**Credential viewer.** Shows SSID, authentication, cipher, and password **only in the terminal**, then asks whether to save an encrypted copy. Enter or `N` creates no file. `Y` asks for a password and writes a randomly named `.dat` archive in Downloads.
 
-```powershell
-.\axios.ps1 -Mode DeveloperArchive
-```
+- Encryption: AES-256-GCM, key from PBKDF2-SHA256 (200,000 iterations). No plaintext file is ever written.
+- Decryption authenticates the archive first. A wrong password or modified archive yields no plaintext output. If no archive is in Downloads, it says so.
+- Never combine the credential view with `-Save`, `-Target`, or `-Ports`.
+- Normal User, Network, and Administrator results never contain credential data.
 
-Lists compatible encrypted archives in Downloads, then:
+Legacy equivalents: `.\axios.ps1 -Mode DeveloperArchive`, or `.\axios.ps1 -Mode Network -View wifi -DeveloperCredentialView` (add `-DecryptCredentialFile` to decrypt).
 
-1. Select an archive.
-2. Enter its encryption password.
-3. AXIOS authenticates and decrypts it.
-
-Output appears in the terminal under **`ENCRYPTED CREDENTIAL ARCHIVE`**. No plaintext file is created. If no compatible archive exists, AXIOS says so.
+> Never publish credentials or machine reports.
 
 ---
 
 ## Saving evidence
 
-Without `-Save`, PowerShell keeps evidence for the current session. CMD keeps a user-profile result cache and removes entries older than one day.
+Without `-Save`, PowerShell keeps evidence for the session and CMD uses the one-day cache.
 
 ```powershell
-.\axios.ps1 -Mode User -Save
-.\axios.ps1 -Mode System -Save
-.\axios.ps1 -Mode Network -NetworkFocus full -Save
+.\axios.cmd -Mode User -Save
+.\axios.cmd -Mode Network -NetworkFocus full -Save
+.\axios.ps1 -Mode User -Save -OutputDirectory "$env:USERPROFILE\Downloads\AXIOS-Reports"
 ```
 
-Use `-Save` only when you want to retain artifacts. **Before sharing saved evidence, review it for:**
+Reports save to Downloads by default; `-OutputDirectory` requires `-Save`.
 
-- Usernames
-- Machine names
-- Internal paths
-- IP addresses
-- Installed software
-- Browser information
-- Security configuration
-- Other environment-specific evidence
+**Before sharing a report, check it for:** usernames, hostnames, internal paths and IPs, installed software, browser details, and security configuration.
 
 ---
 
 ## Parameters
 
-| Parameter | Used with | Purpose |
+| Parameter | Applies to | Values / purpose |
 |---|---|---|
-| `-Mode` | All commands | Selects the AXIOS operation |
-| `-SystemFocus` | `System` | `overview`, `quick`, or `context` |
-| `-NetworkFocus` | `Network` | Selects the Network investigation view |
-| `-Target` | Targeted Network checks | One explicit hostname or IP address |
-| `-Ports` | Network target checks | Explicit ports |
-| `-AuditMode` | `Administrator` | Selects the file-audit behavior |
-| `-MaxFiles` | `Administrator` | Bounded file-candidate limit |
-| `-Save` | Supported assessment modes | Retains investigation artifacts |
+| `-Mode` | all | Operation (default `Help`) |
+| `-Focus` | `User` | `General`, `System`, `SystemQuick`, `SystemContext`, `Persistence`, `Software` |
+| `-SystemFocus` | `System` | `overview`, `quick`, `context` |
+| `-NetworkFocus` / `-View` | `Network` | Focus table above (legacy `targeted` also exists) |
+| `-NetworkProfile` | `Network` | `auto`, `standard`, `administrator` (the last needs elevation) |
+| `-Target`, `-Ports` | Network `connections` | Explicit hosts and ports |
+| `-TimeoutMs` | `Network` | 50–10,000 ms (default 750) |
+| `-AuditMode`, `-MaxFiles` | `Administrator` | `fast`/`smart`; 1–25,000 |
+| `-Save` | assessment modes | Keep artifacts |
+| `-OutputDirectory` | with `-Save` | Report location |
 
-Mode-specific parameters are **rejected** with unrelated modes.
+Mode-specific parameters are rejected with unrelated modes:
 
 ```powershell
-# Invalid
-.\axios.ps1 -Mode User -NetworkFocus full
-
-# Correct
-.\axios.ps1 -Mode Network -NetworkFocus full
+.\axios.cmd -Mode User -NetworkFocus full      # invalid
+.\axios.cmd -Mode Network -NetworkFocus full   # valid
 ```
 
 ---
 
-## Understanding results
+## Reading results
 
-### Collection status
+**Collection status**
 
 | Status | Meaning |
 |---|---|
-| `complete` | Bounded collection completed without a reported gap |
-| `partial` | Useful evidence collected, but visibility was limited |
-| `failed` | No valid result produced |
+| `complete` | Finished with no reported gap |
+| `partial` | Useful evidence, reduced visibility |
+| `failed` | No valid result |
 | `not_attempted` | Not requested, or prerequisites unavailable |
-| `unknown` | Evidence can't support a truthful state |
+| `unknown` | Evidence can't support a truthful status |
 
-A partial result isn't always a software failure. It can mean Administrator access was required, a Windows capability was unavailable, a bounded limit was reached, a protected component denied access, or only part of the evidence could be collected.
+**Finding tiers**
 
-### Finding levels
-
-| Level | Meaning |
+| Tier | Meaning |
 |---|---|
-| **High priority** | Verified condition requiring urgent review |
-| **Medium** | Verified weakness with meaningful exposure |
-| **Review item** | Observed evidence requiring human validation |
-| **Context** | Relevant state that is not proof of compromise |
-| **Visibility limitation** | Evidence could not be collected completely |
-| **Collection error** | Explicit collector or capability failure |
+| High priority / Medium | Verified conditions for review |
+| Review item | Needs operator validation |
+| Context | Relevant state, not proof of compromise |
+| Visibility limitation | Evidence not fully collected |
+| Collection error | Named collector or capability failure; investigate before trusting that area |
 
-> A finding does not automatically mean the system is compromised.
+`partial` can come from access limits, missing Windows capabilities, or bounded limits (such as the file-audit cap). A finding alone doesn't prove compromise, and a completed run doesn't guarantee every artifact was visible.
 
 ---
 
 ## Troubleshooting
 
-### "Administrator mode requires elevation"
-
-1. Close the current PowerShell window.
-2. Open PowerShell with **Run as Administrator**.
-3. Return to the AXIOS folder and rerun:
-
-```powershell
-Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
-.\axios.ps1 -Mode Administrator
-```
-
-### Results can't find a completed assessment
-
-Run `Results` in the **same** PowerShell session, or use `-Save` to retain artifacts:
-
-```powershell
-.\axios.ps1 -Mode User
-.\axios.ps1 -Mode Results
-```
-
-### Package integrity failure
-
-Move the existing `Downloads\AXIOS` folder aside, then extract the official package again. Never run AXIOS from an incomplete extraction.
-
-```powershell
-& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
-Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
-
-.\axios.ps1 -Mode Help
-```
-
-### Script execution is blocked
-
-Use the CMD launcher. If your device's security policy blocks a component, record that limitation instead of changing the policy:
-
-```powershell
-.\axios.cmd -Mode Help
-```
-
-### A report is partial
-
-Read the displayed visibility limitations and collection errors. A partial result means AXIOS preserved incomplete visibility instead of falsely claiming full coverage.
-
----
-
-## Fastest safe starting points
-
-| Goal | Commands |
+| Problem | What to do |
 |---|---|
-| **Normal user** | `.\axios.ps1 -Mode User` then `.\axios.ps1 -Mode Results` |
-| **Administrator** | `.\axios.ps1 -Mode Administrator` then `.\axios.ps1 -Mode Results` |
-| **Network** | `.\axios.ps1 -Mode Network -NetworkFocus full` then `.\axios.ps1 -Mode Results` |
-| **System** | `.\axios.ps1 -Mode System` then `.\axios.ps1 -Mode Results` |
-| **Persistence** | `.\axios.ps1 -Mode Persistence` then `.\axios.ps1 -Mode Results` |
+| **Administrator needs elevation** | Open an elevated PowerShell, `Set-Location` to the folder, rerun `.\axios.cmd -Mode Administrator`. |
+| **Results finds nothing** | Run an assessment first, in the same terminal for `axios.ps1`, or via `axios.cmd` for the user cache. Add `-Save` for persistence. |
+| **Package integrity failure** | Move the incomplete `Downloads\AXIOS` folder aside, check the published hash, and rerun the official CMD. Never run a partial package. |
+| **Blocked by policy / Code Integrity** | Record the exact error and policy. Do not disable protections. Use the packaged CMD interface. |
+| **Report is partial** | Read its visibility limitations and collection errors; they say exactly what couldn't be seen. |
 
 ---
 
-## Command principle
+## Quick start by goal
+
+| Goal | Commands (from the extracted folder) |
+|---|---|
+| Standard user | `.\axios.cmd -Mode User` → `.\axios.cmd -Mode Results` |
+| Network | `.\axios.cmd -Mode Network -NetworkFocus full` → `Results` |
+| System | `.\axios.cmd -Mode User -Focus SystemQuick` → `Results` |
+| Persistence | `.\axios.cmd -Mode User -Focus Persistence` → `Results` |
+| Administrator | *(elevated)* `.\axios.cmd -Mode Administrator` → `Results` |
 
 ```text
-Select a mode.
-Choose an optional focused branch.
-Run the assessment.
-Review the result.
-Save evidence only when needed.
+Select a mode → optional focus → run → review coverage → save only if needed.
 ```
 
-The interface is intentionally smaller than the internal architecture. Operators should never need to understand or invoke the 46 native components individually.
-
----
+You never need to run the 46 native components yourself.
