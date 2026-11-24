@@ -1,131 +1,60 @@
 # Security Policy
 
-> No security software is perfect, and AXIOS is not presented as an exception.
+AXIOS investigates and reports evidence. It does **not** remove threats or change security settings, and a completed investigation does **not** prove a Windows system is clean. Collection limits and unavailable evidence are meant to stay visible in its results.
 
----
+## Quick guide
 
-## Contents
-
-- [Security philosophy](#security-philosophy)
-- [Reporting a security vulnerability](#reporting-a-security-vulnerability)
-- [What to include in a report](#what-to-include-in-a-report)
-- [Protect sensitive data](#protect-sensitive-data)
-- [Response expectations](#response-expectations)
-- [Responsible disclosure](#responsible-disclosure)
-- [Supported version](#supported-version)
-
----
-
-## Security philosophy
-
-AXIOS was created from a practical idea: investigation work that may take hours of manual collection, verification, and correlation should be completed in minutes, **without sacrificing evidence quality, system safety, or honesty about visibility.**
-
-AXIOS is developed independently by one researcher. Time, hardware, testing environments, and development resources are limited. Even with extensive automated testing and real Windows runtime validation, the following may still exist:
-
-- Defects
-- Compatibility problems
-- Incomplete coverage
-- Unexpected behavior
-
-Open-source participation is not simply help for one developer. Every responsible report and contribution makes AXIOS safer, more stable, and more useful for everyone.
-
-The goal is not to claim that AXIOS is perfect. The goal is to keep improving it through **careful engineering, honest testing, and collaboration** with its users and the security community.
-
----
-
-## Reporting a security vulnerability
-
-If you discover any of the following, please contact me directly:
-
-- A vulnerability
-- Unsafe behavior
-- An incorrect security conclusion
-- A privacy issue
-- A compatibility problem
-- Anything else that could improve AXIOS
-
-**Contact:** [adamouttassi3@gmail.com](mailto:adamouttassi3@gmail.com)
-
-You may also use this address for technical questions, test results, improvement suggestions, or anything you'd like to discuss about AXIOS.
-
-**For security reports, use this subject line:**
-
-```text
-AXIOS Security Report: [brief vulnerability title]
-```
-
----
-
-## What to include in a report
-
-When possible, please include:
-
-| Item | Description |
+| Your situation | Where to go |
 |---|---|
-| **Description** | A clear explanation of the issue |
-| **Affected component** | The AXIOS component or command involved |
-| **Version** | The tested release or commit |
-| **Environment** | Windows version and execution context (standard user or Administrator) |
-| **Reproduction steps** | Exactly how to trigger it |
-| **Expected vs. actual behavior** | What should happen, and what happened instead |
-| **Security impact** | What an attacker or user could gain or lose |
-| **Supporting material** | Relevant logs, screenshots, or proof-of-concept |
+| Vulnerability, credential or privacy exposure, unsafe behavior | **Report privately** (see below) |
+| A security conclusion the evidence doesn't support | **Report privately** |
+| Compatibility problem, feature request, documentation fix | Public [GitHub Issue](https://github.com/Adam-dods/axios-windows-investigation/issues), after removing private machine data |
 
-A useful template:
+> **Never** post an unresolved vulnerability or proof of concept in a public Issue, Discussion, or Pull Request.
+
+## Supported releases
+
+| Release | Status |
+|---|---|
+| [v2026.11.23](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) | ✅ Current stable release |
+| [v2026.9.27](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.9.27) | ⚠️ Previous release; security fixes not guaranteed |
+
+Always report the **GitHub release tag or exact commit** you tested. The Rust package metadata may read `2026.9.27` inside the `v2026.11.23` distribution, so that value alone does not identify what you downloaded.
+
+## Report privately
+
+Email [adamouttassi3@gmail.com](mailto:adamouttassi3@gmail.com) with this subject:
 
 ```text
-Subject: AXIOS Security Report: <brief title>
-
-Description:
-Affected component / command:
-Release or commit tested:
-Windows version and context:
-Reproduction steps:
-  1.
-  2.
-  3.
-Expected behavior:
-Actual behavior:
-Security impact:
-Attachments (logs / screenshots / PoC):
+AXIOS Security Report: [brief title]
 ```
 
----
+Please give the maintainer time to investigate before publishing details.
 
-## Protect sensitive data
+## What to include
 
-Before sending evidence, **remove**:
+- [ ] Release tag or commit
+- [ ] Windows version, and whether you ran as a standard user or Administrator
+- [ ] The exact AXIOS command and minimal steps to reproduce
+- [ ] Expected behavior, observed behavior, and security impact
+- [ ] Relevant collection status, errors, and **sanitized** evidence
 
-- Passwords
-- Credentials
-- Encryption keys
-- Personal information
-- Unrelated machine data
+A successful exit code alone doesn't show the expected behavior happened. Include the actual output you saw.
 
----
+## Protect investigation data
+
+Before sending logs, screenshots, reports, or archives, remove:
+
+- passwords, Wi-Fi credentials, tokens, and keys
+- personal identifiers and hostnames
+- unrelated machine data
+
+Do **not** attach an encrypted credential archive or its password unless a secure exchange has been agreed separately. Not sure whether something is safe to share? Send a short description first.
 
 ## Response expectations
 
-I'm always happy to receive your emails and will answer as soon as my available time allows.
+AXIOS is maintained independently, so **no fixed response or resolution deadline is promised.** Reports are handled in good faith, and a clear, reproducible report with sanitized evidence will always be easier to act on.
 
-Because AXIOS is independently developed and maintained by one person, **replies may not always be immediate**. Every serious report, question, and constructive contribution will be read and appreciated.
+## Scope
 
----
-
-## Responsible disclosure
-
-Please **do not** publicly disclose an unresolved vulnerability through:
-
-- GitHub Issues
-- GitHub Discussions
-- Pull Requests
-
-before there has been reasonable time to investigate it.
-
----
-
-## Supported version
-
-| Version | Status |
-|---|---|
-| `2026.9.27` (October 2026, Stable) | Supported |
+AXIOS is intended only for authorized investigation of systems you own or are permitted to assess. Reports about using it on systems without authorization are out of scope.

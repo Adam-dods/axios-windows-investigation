@@ -1,432 +1,118 @@
 # Changelog
 
-All notable changes to AXIOS are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/), and AXIOS uses **calendar-based release identifiers**.
+Notable AXIOS changes, by calendar release. Validation results describe the packages and Windows environments actually tested; they do not guarantee the same result on every PC.
 
-## [2026.11.23] — 2026-11-23
-
-- Added a single `axios-windows-investigation.cmd` package that extracts into Downloads with an inline progress bar and returns to the terminal. AXIOS investigations remain explicit commands.
-- Added CMD and PowerShell launch parity, three primary investigation modes, focused User and Network branches, table-based terminal results, and compact Administrator progress.
-- Corrected the User service-path alert: an unquoted path alone remains context; a high-priority finding requires a privileged service and a potentially writable interpretation candidate.
-- Corrected the Administrator service-path ACL check to distinguish creating a file from creating a subdirectory. Fixed the PowerShell switch conversion error found at stage 38.
-- Made browser extension manifest and localized-message reads explicitly UTF-8. Unlabelled forensic context now explains when the source supplied no description.
-- Moved ordinary outbound connections from applications installed in a user profile to network context; their location alone does not establish a security finding. Improved terminal finding details and the audit correlation context label.
-- Grouped repeated outbound network observations in the console while retaining each original record in JSON. Displayed available process names for protected listeners and rendered legacy Windows event dates as UTC.
-- TCP endpoint tables now resolve the actual owning process ID to its collected name and format IPv6 endpoints with brackets.
-- Windows validation observed User complete and Administrator 42/42 complete with 0 confirmed threats, 12 important findings and 2 collection gaps on the test PC. These are machine-specific observations, not a claim of a clean system or universal compatibility.
-- PR #6 passed two CI checks and was merged into `main`. The published single-file CMD has SHA-256 `796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7`.
-- An earlier Windows 11 package passed 27/27 nonsecret command cases. After the final TCP display change, the CMD built on Kali was tested on Windows for Network `connections` and `services` with zero collection errors; the full matrix was not rerun on this final file. The maintainer also reports successful use on multiple Windows 11 PCs with different versions; machine-by-machine logs are not published here.
+| Release | Date | Summary |
+|---|---|---|
+| [2026.11.23](#20261123--single-file-windows-cmd) | 2026-11-23 | Single-file self-extracting CMD, `axios.cmd` entry point, result cache, detection fixes |
+| [2026.9.27](#2026927--first-stable-release) | 2026-10-01 | First stable release: 42-stage investigation, 46 executables |
 
 ---
 
-Release `2026.9.27` was the first stable public release, prepared in September 2026 and published in October 2026. The Rust package version remains `2026.9.27` in the `2026.11.23` GitHub distribution.
+## [2026.11.23] — Single-file Windows CMD
 
-## Contents
+### Added
 
-- [2026.11.23: Single-file CMD release](#20261123--2026-11-23)
-- [2026.9.27: First stable release](#202692727--2026-10-01)
-- [Added](#added)
-- [Changed](#changed)
-- [Performance](#performance)
-- [Security](#security)
-- [Reliability](#reliability)
-- [Testing and validation](#testing-and-validation)
-- [Packaging](#packaging)
-- [Known limitations](#known-limitations)
-- [Compatibility](#compatibility)
-- [Release principle](#release-principle)
+- **Single-file release asset:** `axios-windows-investigation.cmd` is self-extracting. It extracts into Downloads, shows progress, and returns **without starting a scan**.
+- **`axios.cmd` entry point** for CMD and PowerShell. `axios.ps1` remains available for direct PowerShell use.
+- **Main paths:** `User`, `Network`, and `Administrator`, with focused User and Network views, terminal tables, and compact progress for the 42 Administrator stages.
+- **Per-user result cache** for separate `axios.cmd` invocations. Direct unsaved `axios.ps1` results stay in the current PowerShell session.
+
+### Corrected and improved
+
+**Detection accuracy**
+- Service-path assessment: an unquoted path alone is **context**. A high-priority finding now requires a privileged service *and* a potentially writable interpretation candidate.
+- Ordinary outbound connections from user-profile applications stay in network context unless stronger evidence supports a finding.
+
+**Bug fixes**
+- Administrator service-path ACL check now distinguishes file creation from subdirectory creation, and a PowerShell switch conversion error at stage 38 is fixed.
+- Browser extension manifests and localized messages are read as UTF-8. Unlabelled forensic context now explains that the source supplied no description.
+
+**Display**
+- Repeated outbound observations are grouped in the terminal; individual structured records are kept.
+- Process names are shown for protected listeners, TCP owning PIDs resolve to collected process names, IPv6 endpoints are bracketed, and legacy Windows event dates render as UTC.
+- Improved finding details and the audit-correlation context label.
+
+### Validation and limits
+
+| Check | Result |
+|---|---|
+| PR #6 | Passed its final two CI checks; merged into `main` |
+| Earlier Windows 11 package | **27/27** nonsecret command cases, including both Administrator audit modes at 42/42 stages |
+| Final CMD (built on Kali), tested on Windows | Network `connections` and `services`: zero collection errors, expected process/PID and IPv6 display |
+| 27-case matrix on the final CMD | ⚠️ **Not repeated** |
+| Multiple Windows 11 PCs | Maintainer reports success; logs not published; not a universal compatibility claim |
+| One documented validation | User run completed; Administrator 42/42; 0 confirmed threats, 12 important findings, 2 collection gaps **on that PC**. This does not establish that the PC was clean |
+
+**Published CMD SHA-256:**
+
+```text
+796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7
+```
+
+The release provides the CMD asset and its `.sha256` file. The GitHub-generated source ZIP does **not** include the packaged executables. Rust package metadata still reads `2026.9.27`, so identify this distribution by the GitHub tag or exact commit.
 
 ---
 
-## [2026.9.27] — 2026-10-01
+## [2026.9.27] — First stable release
 
-### First stable release
+*Published 2026-10-01.* Followed two months and 700+ hours of independent development, review, and validation. The numbers below belong to **this release**, not to the later CMD package.
 
-This release establishes the first stable AXIOS Windows investigation platform. It follows **two months and more than 700 hours** of independent development, testing, runtime validation, source review, performance work, and release hardening.
-
-| Measurement | Result |
+| Measurement | Recorded result |
 |---|---:|
-| Administrator investigation stages | 42 |
+| Administrator stages | 42 |
 | Packaged Windows executables | 46 |
-| Reports observed during final validation | 59 |
-| Failed reports during final validation | 0 |
-| Total implementation and test code | 51,015 lines |
-| Production Rust | 37,361 lines |
-| Rust test code | 3,800 lines |
-| PowerShell orchestration | 9,644 lines |
-| Shell build automation | 210 lines |
+| Reports in final validation | 59 |
+| Failed reports | 0 |
+| Implementation and test code | 51,015 lines |
+| Production Rust / Rust tests | 37,361 / 3,800 lines |
+| PowerShell / Shell | 9,644 / 210 lines |
 
-**Highlights**
+### Added
 
-- A stable public interface: `axios.ps1` with eight modes.
-- A complete **42-stage** Administrator investigation.
-- Correlation, Reasoning Web, and response planning that never exceed the evidence.
-- **Administrator runtime cut from ~249.9 s to ~128.6 s** with no collector removed.
-- Encrypted credential export with AES-256-GCM and PBKDF2-SHA256.
+**Interface**
+- `axios.ps1` with eight public modes: `Help`, `User`, `Administrator`, `System`, `Network`, `Persistence`, `Software`, `Results`. Mode-specific parameters are checked before execution.
+- Focused System views (`overview`, `quick`, `context`) and Network views (`overview`, `services`, `connections`, `routing`, `dns`, `firewall`, `wifi`, `full`).
+- Bounded, explicitly authorized target checks. Validation rejects ranges, wildcards, command-like input, and invalid ports.
 
----
+**Investigation**
+- 42-stage Administrator investigation: persistence, execution, telemetry, privileges, platform and kernel trust, network, defenses, software, files, health, integrity, correlation, reasoning, response planning.
+- Standard-user investigation that keeps restricted evidence as partial or unavailable.
+- Persistence coverage (Registry, startup locations, tasks, services, drivers, WMI permanent event subscriptions), software and update review, and session `Results`.
+- Native Windows trust, registry, access-control, privilege, cryptographic, and security-state checks where available.
 
-## Added
+**Evidence model**
+- Structured evidence with collection status, errors, visibility limits, provenance, performance data, and integrity metadata.
+- Collection-integrity review, cross-source correlation, Reasoning Web, and advisory response planning. Missing evidence, duplicates, and contradictions cannot silently raise confidence.
+- Package-integrity validation and performance reporting before final completion.
 
-### Stable public interface
+**Developer tools**
+- Explicit developer exposure and credential commands, outside normal result paths. Optional encrypted export uses AES-256-GCM with PBKDF2-SHA256 (200,000 iterations), randomized filenames, and no plaintext output file.
 
-```powershell
-.\axios.ps1
-```
+### Changed
 
-**Public modes:** `Help`, `User`, `Administrator`, `System`, `Network`, `Persistence`, `Software`, `Results`
+- Clarified findings, review items, context, limitations, and unsupported conclusions. An unusual observation alone is not confirmed compromise.
+- Improved terminal rendering of grouped findings, nested data, dates, firewall profiles, unavailable capabilities, and internal-path privacy.
+- Unavailable firewall-rule counts now show an explicit uncollected state instead of a misleading zero; wireless-property labels are normalized.
+- Truncated file audits are now `partial`, preserving audit mode, scanned roots, candidate limits, time budget, and truncation state.
+- Broad repeated optional-feature enumeration replaced by targeted collection of security-relevant Windows features.
 
-| Mode | Focused branches |
-|---|---|
-| `System` | `overview`, `quick`, `context` |
-| `Network` | `overview`, `services`, `connections`, `routing`, `dns`, `firewall`, `wifi`, `full` |
+### Performance
 
-Parameters are validated against the selected mode. Unsupported combinations are rejected **before** execution.
+On the validated Windows environment, Administrator runtime dropped from **249,924 ms to 128,632 ms** (about 48.5%), with all 42 stages, reports, integrity checks, correlation, reasoning, and response planning intact. This measurement is specific to that environment.
 
----
+### Security and reliability
 
-### Complete Administrator investigation
+- **Security:** strict target and parameter validation, privilege checks, bounded active checks, package preflight, privacy and source-hygiene checks, authenticated credential export, masked secret input, conservative unknown-trust handling.
+- **Reliability:** working-directory restoration, UTF-8 handling, legacy Windows fallbacks, root-relative paths, access-denied status, deduplication, worker recovery, report validation, portable-result tolerance.
 
-A 42-stage Windows investigation workflow covering:
+### Testing and packaging
 
-| Area | Stages |
-|---|---|
-| **Persistence** | Registry persistence, extended persistence |
-| **Execution** | Live activity, process integrity, runtime CPU and memory review, memory execution review |
-| **Telemetry** | Telemetry integrity, event correlation |
-| **Privilege and access** | Privileged execution surfaces, access surfaces, administrator exposure review, identity and credential-access review |
-| **Platform trust** | Hardware trust, firmware identity, boot-chain review, platform-hardening review, virtualization-boundary review |
-| **Kernel** | Kernel posture, loaded-driver trust, kernel runtime integrity, Code Integrity investigation |
-| **Network** | Network posture, network exposure, network service review, network identity and egress, deep network evidence, remote-access review |
-| **Defenses** | Security posture, security review, Defender evidence, security-control review, execution-policy and audit visibility |
-| **Software** | Browser extensions, software and update exposure, application investigation |
-| **Files** | Universal file audit, deep investigation |
-| **Health** | Health posture |
-| **Integrity and reasoning** | Collection-integrity review, cross-source observation integrity, persistent investigation state, Reasoning Web and response planning |
+Validation covered Rust formatting, tests, and linting; PowerShell parsing; Windows cross-compilation and runtime checks; archive integrity; extraction of 46 executables; standard-user and Administrator runs; Results; developer flows; partial-coverage propagation; and performance reporting.
 
-> Final correlation and reasoning stages run **only after** the required evidence reports have been collected and reviewed.
+The recorded full investigation finished with **59 reports, 0 failed, 1 partial**. The partial report came from a bounded file-audit limit and stayed visible as partial coverage.
 
----
-
-### Standard-user investigation
-
-`User` mode needs no Administrator privileges. It reviews evidence available to the current Windows token:
-
-- User-visible processes
-- Startup entries
-- Scheduled tasks
-- Accessible services
-- Network configuration
-- User-writable execution surfaces
-- Accessible file and registry permissions
-- Security-control evidence available without elevation
-
-Restricted evidence is reported as **partial or unavailable**, never as clean.
-
----
-
-### System investigation
-
-Hardware trust, Secure Boot, TPM, BitLocker visibility, virtualization-based security, kernel posture, driver trust, security controls, system health, context observations, and collection limitations.
-
----
-
-### Network investigation
-
-Bounded network-security assessment covering:
-
-- Active adapters, IP configuration, DNS, routing, neighbor information
-- Firewall profiles and firewall-rule visibility
-- Wireless configuration
-- TCP connections, UDP endpoints, listeners, network services
-- Security-relevant observations
-- Explicit authorized target checks
-
-**Target validation rejects:**
-
-| Rejected input | Why |
-|---|---|
-| CIDR ranges | No implicit scanning of ranges |
-| Wildcards | Targets must be explicit |
-| Whitespace | Prevents argument smuggling |
-| Command-like input | Prevents injection |
-| Invalid ports | Only valid ports accepted |
-| Implicit network ranges | Only explicit hostnames or IPs |
-
----
-
-### Persistence investigation
-
-Registry Run entries, startup commands, startup folders, scheduled tasks, services, driver-related persistence, extended persistence sources, WMI permanent event subscriptions, and **persistence-coverage accounting**.
-
----
-
-### Software and update review
-
-Installed software inventory, update exposure, relevant application posture, browser-extension evidence, and software-related security observations.
-
----
-
-### Results mode
-
-```powershell
-.\axios.ps1 -Mode Results
-```
-
-The latest completed command stays available during the active PowerShell session. Results include:
-
-| Group | Contents |
-|---|---|
-| **Status** | Assessment status, result scope |
-| **Findings** | Confirmed threats, important findings, unique context records |
-| **Gaps** | Collection gaps, unresolved verification |
-| **Reasoning** | Leading hypothesis, hypothesis score, independent evidence sources, contradictions, next-best checks |
-
-Console output hides internal temporary paths and machine receipts by default.
-
----
-
-### Structured evidence
-
-Structured report fields: success state, collection status, findings, context observations, errors, visibility limitations, evidence references, performance measurements, summary values.
-
-Normalized collection states: `complete`, `partial`, `failed`, `not_attempted`, `unknown`.
-
-> A zero item count is **not** clean evidence unless the capability was successfully collected.
-
----
-
-### Collection integrity
-
-Reviews for missing reports, failed collectors, partial reports, duplicate evidence, contradictory evidence, invalid evidence references, unsupported conclusions, and inconsistent summary counts. Collector failures remain visible throughout the pipeline.
-
----
-
-### Evidence correlation
-
-Cross-source correlation across files, processes, services, persistence, network activity, memory execution, drivers, boot integrity, security controls, Defender evidence, event logs, identity and access, and software inventory.
-
-- Provenance stays attached to correlated findings.
-- Duplicate observations do not count as independent evidence.
-
----
-
-### Reasoning Web
-
-Bounded analysis of evidence facts, supported relationships, alternative explanations, contradictions, unresolved facts, hypotheses, confidence values, and next-best verification steps.
-
-It **cannot** create evidence or silently raise confidence beyond the available support, and it preserves the policy that malware is not confirmed without sufficient independent verification.
-
----
-
-### Response planning
-
-Prioritized plans from supported findings, unresolved facts, and collection limitations. Categories: **High priority**, **Medium priority**, **Verification**, **Contextual follow-up**.
-
-Actions are **advisory** and never executed automatically.
-
----
-
-### Native Windows verification
-
-- Authenticode verification
-- Registry inspection
-- Access-control inspection
-- Token and privilege context
-- Windows cryptographic operations
-- Windows security-state collection
-
-Signature verification uses Windows trust facilities with cache-only retrieval where required. Unavailable trust information stays **unknown or partial**.
-
----
-
-### Developer investigation modes
-
-Isolated from normal public collection paths:
-
-| Command | Purpose |
-|---|---|
-| `DeveloperExposure` | Evidence-focused exposure assessment for a standard Windows user |
-| `DeveloperCredential` | Explicit console-only access to authorized Wi-Fi credential evidence |
-| `DeveloperArchive` | Decrypts AXIOS encrypted credential archives to the terminal, no plaintext file |
-
-**Encrypted export specification**
-
-| Property | Value |
-|---|---|
-| Cipher | AES-256-GCM (authenticated encryption) |
-| Key derivation | PBKDF2-SHA256 |
-| Iterations | 200,000 |
-| File names | Randomized |
-| Plaintext file | None |
-
----
-
-### Package integrity
-
-Validation of required files, required executables, package structure, SHA-256 manifest entries, missing components, incomplete extraction, and modified packaged content. The stable package contains **46 native executables**.
-
----
-
-### Performance reporting
-
-Measured stages, total and per-stage runtime, output size where available, collector-specific counters, and cache measurements where available. Performance data is written **before** final investigation completion.
-
----
-
-### Documentation
-
-Project README, architecture documentation, security policy, contribution and testing guidelines, public command documentation, sanitized Windows runtime screenshots, and release and validation information.
-
----
-
-## Changed
-
-### Product identity
-
-```text
-AXIOS
-Windows Investigation Platform
-```
-
-Calendar-based release identity `2026.9.27`. Temporary development naming and compatibility labels were removed from the public interface.
-
-### Command interface
-
-- Simplified around stable investigation modes.
-- Quick and Context are now focused **System branches**, not top-level commands.
-- Administrator is the only complete investigation command.
-- Developer commands stay hidden from public help.
-
-### Evidence terminology
-
-Clarified the distinction between security findings, review items, context observations, collection limitations, and unsupported conclusions. Context observations are no longer labeled as confirmed security exposures, and raw and unique context counts are labeled separately.
-
-### Console rendering
-
-- Groups security findings by subject
-- Flattens nested arrays and objects, avoiding raw PowerShell object rendering
-- Suppresses empty headings and hides internal evidence paths
-- Displays dates in readable form
-- Preserves meaningful words in property names
-- Uses consistent dynamic heading separators
-- Shows firewall profiles as distinct groups
-- Describes unavailable capabilities truthfully
-
-### Network reporting
-
-Unavailable firewall-rule counts changed from a misleading zero to an explicit state:
-
-```text
-Firewall rules: not collected (not_attempted)
-```
-
-Localized wireless-property names are normalized into professional English labels. Explicit endpoints display without empty process identifiers.
-
-### File-audit coverage
-
-Bounded file-audit truncation now reports `collection_status=partial`, and a truncated audit can no longer contribute to an overall complete status. The report preserves:
-
-- Selected audit mode
-- Scanned roots
-- Effective artifact limit
-- Per-root candidate budget
-- Time-budget state
-- Artifact count
-- Truncation state
-
-### Optional Windows feature collection
-
-Platform-hardening review moved from broad repeated enumeration to **targeted collection** of security-relevant optional features. States normalize to `Enabled` / `Disabled`. Same relevant results, shorter runtime.
-
----
-
-## Performance
-
-```text
-Before:  249,924 ms
-After:   128,632 ms
-```
-
-That is roughly a **48.5% reduction** (about 2 minutes saved) in the validated Windows environment.
-
-Preserved through the optimization:
-
-- 42 investigation stages
-- 59 observed reports
-- Evidence correlation, Reasoning Web, response planning
-- Package-integrity checks
-- Collection-status truthfulness
-
-> No collector was removed to obtain the improvement.
-
----
-
-## Security
-
-- Strict network target validation
-- Mode-specific parameter rejection
-- Package-integrity preflight checks
-- Source-hygiene checks for personal machine data
-- Privacy checks for console output
-- Authenticated AES-256-GCM credential exports
-- Password-length validation for encrypted exports
-- Terminal secret-input masking and console-state restoration
-- Native registry-handle cleanup validation
-- Conservative handling of unknown trust states
-- Explicit privilege checks before execution
-- Bounded active network checks
-- Validation preventing private paths from entering published source
-- Synthetic Windows paths for tests and documentation
-- Rejection of command-like network input
-
----
-
-## Reliability
-
-- Working-directory independence, with restoration in `finally` paths
-- PowerShell UTF-8 input, output, and code-page handling
-- Windows compatibility fallbacks, including legacy network-adapter and firewall collection
-- Normalized handling of Windows root-relative paths
-- Explicit tracking of access-denied evidence
-- Deduplication before finding and observation counts
-- Recovery from poisoned worker-queue synchronization
-- Report validation before marking an investigation complete
-- Final reviews before success is recorded
-- Performance-summary creation before final completion
-- Portable-result tolerance for optional report fields
-
----
-
-## Testing and validation
-
-```bash
-cargo fmt --check
-cargo test --all-targets
-cargo clippy --all-targets --all-features -- -D warnings
-```
-
-PowerShell files were validated with the PowerShell language parser.
-
-**Release validation also covered:** Windows cross-compilation, package creation, archive integrity, SHA-256 generation, required binary presence, complete extraction of all 46 executables, standard-user runtime, Administrator runtime, Results rendering, network investigation, persistence investigation, developer exposure, encrypted credential export and decryption, partial-coverage propagation, performance reporting.
-
-**Final full-investigation result**
-
-```text
-Completion state       : completed
-Reports observed       : 59
-Reports failed         : 0
-Reports partial        : 1
-Contradictions         : 0
-Unresolved facts       : 0
-```
-
-The one partial report came from an explicit bounded file-audit limit and was correctly propagated as partial coverage.
-
----
-
-## Packaging
-
-Three validated artifacts:
+Artifacts of this release (they describe the earlier packaging; for the single-file CMD use `v2026.11.23`):
 
 ```text
 axios-windows-investigation.zip
@@ -434,36 +120,10 @@ axios-windows-investigation-source.tgz
 axios-windows-investigation-source.txt
 ```
 
-The Windows package contains the public PowerShell entrypoint, investigation runners, 46 native Windows executables, command reference, integrity manifest, and required package resources.
+### Known limitations
 
-Build directories, local Git history, credentials, machine evidence, investigation archives, and sensitive files are excluded from source packages.
-
----
-
-## Known limitations
-
-- AXIOS is currently Windows-focused.
-- Some evidence requires Administrator privileges.
-- Protected processes and security products may restrict collection.
-- Firewall-rule inspection may be unavailable to a standard user.
-- Raw packet capture requires a trusted external capture driver and is not provided by socket metadata.
-- Bounded file collection may intentionally return partial coverage.
-- Windows APIs and evidence availability differ across versions and configurations.
-- A completed investigation does **not** prove that a system is clean.
-- AXIOS reports and prioritizes evidence but does not automatically remediate.
+AXIOS is Windows-focused. Privileges, protected processes, security products, Windows APIs, and bounded collection can restrict evidence. Socket metadata is not raw packet capture. AXIOS reports and prioritizes evidence; it does not automatically remediate or prove that a completed system is clean.
 
 ---
 
-## Compatibility
-
-Designed for supported Windows environments with the required PowerShell and Windows security APIs. Fallbacks exist for supported legacy interfaces where practical. Capabilities unavailable on a specific Windows release remain **explicitly unavailable**, never represented as clean.
-
----
-
-## Release principle
-
-> **AXIOS must never present more certainty than the collected evidence can support.**
-
-A completed command means the selected bounded workflow finished. It does not mean every possible artifact was visible or that the system is guaranteed clean.
-
----
+> **AXIOS must never present more certainty than the collected evidence supports.**

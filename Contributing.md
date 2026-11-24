@@ -1,300 +1,126 @@
 # Contributing to AXIOS
 
-Thank you for your interest in improving AXIOS.
+AXIOS is an independently maintained Windows investigation project. Contributions to **accuracy, security, privacy, compatibility, performance, testing, and documentation** are welcome. You can help without writing code: report reproducible behavior, or test a different Windows environment.
 
-AXIOS is an independently developed Windows security investigation platform. It helps people identify weaknesses in their systems, understand the evidence behind them, and improve their security through **safe, bounded, and non-destructive** investigation.
+Read [README.md](README.md), [Architecture.md](Architecture.md), and [SECURITY.md](SECURITY.md) first.
 
-The project is developed and maintained by one researcher. Contributions that improve accuracy, stability, security, compatibility, testing, performance, privacy, or documentation are welcome.
-
-> **You do not need to write code to make a useful contribution.**
+**Jump to:** [Start here](#start-here) · [Bug reports](#reporting-a-bug) · [Improvements](#proposing-an-improvement) · [Code](#code-requirements) · [Evidence rules](#evidence-rules) · [Testing](#testing) · [Privacy](#privacy) · [Pull requests](#pull-requests)
 
 ---
 
-## Contents
+## Start here
 
-- [Quick start for contributors](#quick-start-for-contributors)
-- [Ways to contribute](#ways-to-contribute)
-- [Before contributing](#before-contributing)
-- [Reporting bugs](#reporting-bugs)
-- [Proposing improvements](#proposing-improvements)
-- [Code requirements](#code-requirements)
-- [Evidence rules](#evidence-rules)
-- [Testing requirements](#testing-requirements)
-- [Windows runtime validation](#windows-runtime-validation)
-- [Privacy requirements](#privacy-requirements)
-- [Pull requests](#pull-requests)
-- [Security vulnerabilities](#security-vulnerabilities)
-- [Review expectations](#review-expectations)
+1. Search existing Issues and Pull Requests.
+2. Pick **one** focused problem or improvement.
+3. Note the release tag or commit you tested.
+4. Keep observations separate from assumptions.
+5. Remove credentials and private machine data from anything you share.
 
----
-
-## Quick start for contributors
+Before and after a code change, run:
 
 ```bash
-# 1. Verify everything passes before you change anything
 cargo fmt --check
 cargo test --all-targets
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
-Then:
-
-1. Keep your change focused on **one** objective.
-2. Add a test that proves the behavior.
-3. Sanitize any evidence you include.
-4. Open a Pull Request using the template below.
+> A green Rust check does **not** replace Windows runtime validation for Windows-specific changes.
 
 ---
 
-## Ways to contribute
+## Reporting a bug
 
-| Area | Examples |
-|---|---|
-| **Testing** | Try different Windows versions and configurations; measure collector performance |
-| **Accuracy** | Report false positives and false negatives; flag unclear or misleading output |
-| **Evidence** | Improve evidence classification; suggest relevant evidence sources |
-| **Quality** | Add or improve tests; improve Windows compatibility |
-| **Safety** | Review privacy boundaries; report vulnerabilities responsibly |
-| **Docs** | Improve documentation |
-| **Code** | Focused Rust, PowerShell, or shell changes |
-
----
-
-## Before contributing
-
-Before opening an Issue or Pull Request:
-
-1. Read [README.md](README.md), [Architecture.md](Architecture.md), and [SECURITY.md](SECURITY.md).
-2. Search existing Issues and Pull Requests for related work.
-3. Test the latest supported release or current default branch.
-4. Record the exact AXIOS command used.
-5. Record whether PowerShell ran as a standard user or Administrator.
-6. Separate observed facts from assumptions.
-7. Remove credentials, personal information, and unrelated machine data.
-8. Keep each report focused on one problem or improvement.
-
-> Do not combine unrelated problems into one report.
-
----
-
-## Reporting bugs
-
-| Item | Description |
-|---|---|
-| **Summary** | A short explanation of the problem |
-| **Version** | AXIOS release or commit tested |
-| **Environment** | Windows version, architecture, and PowerShell version |
-| **Execution context** | Standard user or Administrator |
-| **Command** | The exact command used |
-| **Expected behavior** | What should have happened |
-| **Actual behavior** | What happened instead |
-| **Reproduction steps** | Minimal ordered steps |
-| **Evidence** | Sanitized output, logs, or screenshots |
-| **Frequency** | Always, intermittent, or observed once |
-
-Template:
+Open a public Issue for an ordinary bug **after sanitizing evidence**. Copy this template:
 
 ```text
 Title:
-
-AXIOS release or commit:
-Windows version:
-System architecture:
+Release tag or commit:
+Windows version/build and architecture:
 PowerShell version:
-Execution context:
-Command:
-
+Standard user or Administrator:
+Exact command:
+Steps to reproduce:
 Expected behavior:
-
 Actual behavior:
-
-Reproduction steps:
-1.
-2.
-3.
-
+Collection status and errors:
 Sanitized evidence:
-
-Additional notes:
+Frequency:
 ```
 
-> A command returning exit code zero is **not** proof that the intended behavior worked. Verify the final state.
+An exit code of zero doesn't prove the intended behavior worked. Check the actual result and final state.
+
+> **Vulnerability, privacy exposure, or unsafe security conclusion?** Don't open a public Issue. Follow [SECURITY.md](SECURITY.md) and report **privately**.
 
 ---
 
-## Proposing improvements
+## Proposing an improvement
 
-Explain the **investigation problem** before proposing implementation details. Please answer:
+Start with the **investigation question**, then cover:
 
-1. What security question should AXIOS answer?
-2. Which evidence source can answer it?
-3. Does collection require a standard user or Administrator token?
-4. Which Windows versions provide the evidence?
-5. How should unavailable or restricted evidence be represented?
-6. What runtime, memory, or evidence limits are required?
-7. What may cause false positives or false negatives?
-8. How will the behavior be tested?
-9. How will the result help the investigator?
+- the evidence source and required privilege
+- relevant Windows versions
+- expected limits, and possible false positives or negatives
+- how the result helps an investigator
+- how unavailable evidence should appear
+- how the behavior can be verified
 
-> A new feature should improve evidence quality or investigation capability, not simply produce more output.
+A feature should improve evidence quality or investigation capability, not merely increase output.
 
 ---
 
 ## Code requirements
 
-Changes must be:
+Keep changes focused, reviewable, non-destructive, and compatible with the public interface. Preserve explicit errors, bounded work, evidence provenance, and truthful `partial`, `failed`, and unavailable states. Avoid unrelated formatting or renaming.
 
-- Focused on one technical objective
-- Small enough to review safely
-- Consistent with the AXIOS architecture
-- Covered by relevant tests
-- Non-destructive by default
-- Honest about failure and partial visibility
-- Compatible with the stable public command interface
-- Free from unrelated formatting or renaming
-- Free from personal or machine-specific data
+| Language | Requirements |
+|---|---|
+| **Rust** | Structured evidence and explicit error paths. Scope Windows resources. Avoid unnecessary `unsafe`, and explain any that is required. Never turn a collector error into a clean default. |
+| **PowerShell** | Must parse. Validate options by mode. Check native exit codes. Restore working-directory and console state. Keep structured data until rendering. Avoid language-dependent parsing. Keep internal paths and machine receipts out of routine terminal output. |
+| **Shell / packaging** | Stop on failed commands. Verify archive contents, package structure, and integrity metadata. Exclude private and generated data. No destructive operations on broad or unresolved paths. |
 
-Do not commit generated binaries, build directories, investigation archives, credentials, machine logs, or private evidence.
-
-### Rust
-
-Rust changes must:
-
-- Use explicit error propagation
-- Avoid unnecessary `unsafe`
-- Keep Windows handles and resources correctly scoped
-- Preserve bounded runtime and memory behavior
-- Use structured evidence models
-- Preserve evidence provenance
-- Avoid converting errors into clean default values
-- Pass formatting, tests, and linting
-
-```bash
-cargo fmt --check
-cargo test --all-targets
-cargo clippy --all-targets --all-features -- -D warnings
-```
-
-If `unsafe` is required, keep it minimal and explain why it is necessary.
-
-### PowerShell
-
-PowerShell changes must:
-
-- Parse successfully
-- Preserve the public command interface
-- Validate mode-specific parameters
-- Use explicit error handling
-- Check native executable exit codes
-- Restore working-directory and console state
-- Avoid language-dependent parsing where possible
-- Preserve structured objects until rendering
-- Hide internal paths and machine receipts from normal console output
-- Represent denied or unavailable collection truthfully
-
-### Shell
-
-Build and packaging changes must:
-
-- Stop when a required command fails
-- Avoid creating incomplete releases
-- Exclude sensitive files and build artifacts
-- Validate archive contents
-- Preserve package structure
-- Generate or verify integrity metadata
-- Avoid destructive commands against broad or unresolved paths
+**Never commit:** generated executables, build directories, credentials, investigation archives, machine logs, or private evidence.
 
 ---
 
 ## Evidence rules
 
-Every contribution must preserve these rules.
-
-| Rule | Meaning |
+| Rule | Required behavior |
 |---|---|
-| **Evidence before conclusions** | A conclusion must be supported by collected evidence |
-| **Missing evidence is not clean evidence** | Failed, denied, unavailable, or truncated collection must remain visible |
-| **Context is not compromise** | An unusual process, unsigned file, open port, persistence entry, or configuration weakness is not automatically malicious |
-| **Duplicates are not independent evidence** | Repeated copies of the same observation must not increase confidence |
-| **Contradictions remain visible** | AXIOS must not hide disagreement between reliable sources |
-| **Findings preserve provenance** | Every finding keeps its collector, evidence source, and verification state |
-| **Confidence cannot exceed evidence** | Strength must reflect the quality, independence, and completeness of the supporting evidence |
+| Evidence before conclusions | Every conclusion points to collected evidence |
+| Missing is not clean | Failed, denied, unavailable, or truncated collection stays visible |
+| Context is not compromise | An unusual process, open port, or configuration alone proves no threat |
+| Duplicates are not corroboration | Repeated records don't add independent support |
+| Preserve contradictions | Reliable sources may disagree; show the disagreement |
+| Keep provenance | Findings retain collector, source, and verification state |
+| Bound confidence | A conclusion can't be stronger than its evidence |
 
 ---
 
-## Testing requirements
+## Testing
 
-Every behavioral change should include a test that proves the intended result and prevents regression.
+Write tests that prove the changed behavior and prevent a meaningful regression. Depending on the change, cover: Rust logic, parameter routing, privilege boundaries, evidence precision, failure and partial states, privacy, PowerShell parsing, package integrity, working-directory behavior, and Windows compatibility.
 
-Depending on the change, tests may include:
+**For a collector,** verify its status, observations and findings, errors, visibility limits, and evidence references. Exercise denied access, unavailable capabilities, and reached limits. A matching implementation snapshot is not proof of correct behavior.
 
-- Rust unit tests
-- Integration contracts
-- Command-interface contracts
-- Parameter-routing tests
-- Privilege-boundary tests
-- Evidence-precision tests
-- Failure-state tests
-- Partial-visibility tests
-- Privacy and source-hygiene tests
-- PowerShell parser validation
-- Windows compatibility tests
-- Package-integrity tests
-- Working-directory independence tests
-- Windows runtime validation
+### Windows runtime evidence
 
-> Tests must verify **final behavior**, not only successful process execution.
+For changes to native collection, packaging, privileges, orchestration, or terminal output, test on Windows when possible and record:
 
-A collector test should check:
+- [ ] Windows version and build; release tag or commit
+- [ ] Exact command, and standard-user or Administrator context
+- [ ] Completion state and any failed or partial collectors
+- [ ] Sanitized relevant output and the expected final state
+- [ ] What was **not** tested
 
-- Report success state
-- Collection status
-- Findings and observations
-- Errors and visibility limitations
-- Evidence references
-- Behavior when access is denied
-- Behavior when evidence is unavailable
-- Behavior when collection limits are reached
+If you didn't validate on Windows, say so. A successful process exit alone is not a passing runtime test.
 
 ---
 
-## Windows runtime validation
+## Privacy
 
-Changes affecting Windows-native behavior, packaging, privileges, orchestration, or console output should be tested on Windows whenever possible.
+Never post passwords, Wi-Fi credentials, tokens, keys, real usernames or hostnames, browser-profile data, private reports, customer information, or unrelated personal paths. Review screenshots and archives before sharing.
 
-Runtime evidence should include:
-
-- Windows version and build
-- AXIOS release or commit
-- Standard-user or Administrator context
-- Exact command
-- Completion status
-- Failed and partial collectors
-- Sanitized relevant output
-- Verification of the expected final state
-
-> Do not describe a runtime test as passing when the intended result was not verified.
-
----
-
-## Privacy requirements
-
-**Never submit:**
-
-- Passwords
-- Wi-Fi credentials
-- Tokens
-- API keys
-- Encryption keys
-- Personal usernames
-- Real machine names
-- Private investigation evidence
-- Browser-profile data
-- Customer or employer information
-- Unrelated personal file paths
-- Unredacted investigation reports
-
-Use synthetic values in examples and test fixtures:
+Use synthetic examples:
 
 ```text
 C:\Users\TestUser
@@ -303,68 +129,20 @@ C:\AXIOS\axios-windows-investigation
 example.invalid
 ```
 
-Screenshots must be sanitized before publication.
-
 ---
 
 ## Pull requests
 
+One objective per PR. Use this structure:
+
 ```text
-## Problem
-
-## Why this belongs in AXIOS
-
+## Problem and investigation value
 ## Implementation
-
-## Evidence and behavior
-
-## Tests performed
-
-## Windows runtime validation
-
-## Security and privacy considerations
-
-## Compatibility considerations
-
+## Evidence and expected behavior
+## Tests run and results
+## Windows runtime validation or its absence
+## Privacy and compatibility impact
 ## Known limitations
 ```
 
-Keep Pull Requests focused. Submit unrelated changes separately.
-
-**A contribution may be declined if it:**
-
-- Weakens security or privacy boundaries
-- Hides failures or incomplete visibility
-- Adds unsupported security claims
-- Breaks the stable public interface
-- Expands scope without clear evidence value
-- Cannot be tested or maintained reliably
-
----
-
-## Security vulnerabilities
-
-Do **not** report unresolved vulnerabilities through public Issues, Discussions, or Pull Requests.
-
-Follow [SECURITY.md](SECURITY.md) and send the report directly to **adamouttassi3@gmail.com**.
-
----
-
-## Review expectations
-
-AXIOS is developed and maintained independently by one researcher, so reviews may not always be immediate.
-
-Contributions are evaluated for:
-
-| | | |
-|---|---|---|
-| Technical correctness | Security impact | Evidence quality |
-| Architectural consistency | Test coverage | Windows compatibility |
-| Privacy | Performance | Maintainability |
-| Clarity for investigators | | |
-
-Please be respectful, precise, and patient. Technical disagreement is welcome when it stays focused on evidence and engineering.
-
-Thank you for helping make AXIOS safer, more stable, more precise, and more useful for everyone.
-
----
+A PR may be declined if it hides incomplete coverage, weakens privacy, overstates a security claim, breaks the stable interface, or can't be maintained reliably. Reviews may take time because AXIOS is maintained independently.

@@ -1,461 +1,224 @@
 # AXIOS Architecture
 
-> **Collection produces evidence. Validation establishes its quality. Correlation establishes its relationships. Reasoning evaluates supported explanations. Only then may the platform present a conclusion.**
+> Collection produces evidence. Validation establishes its quality. Correlation links related observations. Reasoning evaluates supported explanations. Only then does AXIOS present a conclusion.
 
-No later layer is allowed to silently repair, hide, or overstate the uncertainty produced by an earlier layer.
+**Golden rule:** a later layer must preserve the uncertainty, errors, and visibility limits reported by an earlier one.
 
----
-
-## Contents
-
-- [The big picture](#the-big-picture)
-- [Five architectural boundaries](#five-architectural-boundaries)
-- [Repository structure](#repository-structure)
-- [Layer by layer](#layer-by-layer)
-- [End-to-end flow](#end-to-end-flow)
-- [Architectural guarantees](#architectural-guarantees)
-- [Design rules for contributors](#design-rules-for-contributors)
+**Jump to:** [Overview](#overview) · [Boundaries](#five-boundaries) · [Repository](#repository-and-release-package) · [Layers 1–9](#1-public-interface) · [Contract](#end-to-end-contract) · [Design rules](#design-rules)
 
 ---
 
-## The big picture
+## Overview
 
-```text
-Operator command
-      │
-      ▼
-Public parameter validation
-      │
-      ▼
-Privilege and package checks
-      │
-      ▼
-Bounded native collection
-      │
-      ▼
-Evidence normalization
-      │
-      ▼
-Collection-integrity review
-      │
-      ▼
-Cross-source correlation
-      │
-      ▼
-Reasoning Web
-      │
-      ▼
-Response-plan generation
-      │
-      ▼
-Console and structured results
+```mermaid
+flowchart TD
+    A[Operator] --> B[axios.cmd / axios.ps1]
+    B --> C[Parameter, privilege, package checks]
+    C --> D[Bounded Windows + Rust collection]
+    D --> E[Structured evidence + status]
+    E --> F[Integrity and trust review]
+    F --> G[Cross-source correlation]
+    G --> H[Reasoning Web]
+    H --> I[Advisory response plan]
+    I --> J[Terminal + structured results]
 ```
 
-Every layer asks one question and answers only that question:
-
-| Layer | The question it answers |
+| Layer | Responsibility |
 |---|---|
-| Public interface | What does the operator want, and is the request valid in this Windows context? |
-| Orchestration | Which components must run, in what order, and how are results preserved? |
-| Native collection | What evidence is directly observable on this system? |
-| Normalization | Can evidence from different collectors and Windows environments be compared safely? |
-| Trust and integrity | Which evidence is reliable enough for higher-level analysis? |
-| Correlation | Which observations describe the same activity, and how does that change priority? |
-| Reasoning Web | Which explanations fit the evidence, what conflicts, and what should be verified next? |
-| Response planning | What should a human investigator verify first? |
-| Results | How can the investigation be reviewed without losing the evidence behind it? |
+| Public interface | Interpret the requested mode and validate its parameters |
+| Orchestration | Run required components in order and preserve their results |
+| Collection | Observe Windows sources within explicit limits |
+| Normalization | Make evidence comparable without inventing missing values |
+| Integrity review | Check reports, references, package components, and collection status |
+| Correlation | Link related observations while retaining their sources |
+| Reasoning | Evaluate support, conflicts, alternatives, and unresolved facts |
+| Response planning | Suggest what an investigator should verify next |
+| Results | Show conclusions together with coverage and supporting evidence |
+
+## Five boundaries
+
+1. **PowerShell coordinates execution.** It validates requests, chooses runners, and checks native exit codes.
+2. **Rust collects and analyzes evidence.** Packaged executables do the bounded native work.
+3. **Structured reports connect layers.** Status, errors, findings, context, and provenance travel with the evidence.
+4. **Correlation respects evidence quality.** Missing or failed collection cannot become corroboration.
+5. **Results preserve limitations.** A completed workflow is not a claim of complete visibility or a clean system.
 
 ---
 
-## Five architectural boundaries
+## Repository and release package
 
-The repository holds many files, but they all follow five boundaries:
+The source repository and the extracted Windows package have different layouts.
 
-1. **PowerShell controls execution.**
-2. **Rust collects and analyzes evidence.**
-3. **Structured reports connect the layers.**
-4. **Correlation operates only on validated evidence.**
-5. **Results preserve both conclusions and visibility limitations.**
-
----
-
-## Repository structure
-
-The tree below shows architectural responsibilities, not every file.
-
-```text
-axios-windows-investigation
-│
-├── axios.ps1                  Stable public PowerShell entrypoint
-├── Cargo.toml / Cargo.lock
-├── README.md  Changelog.md  Contributing.md  SECURITY.md  LICENSE
-│
-├── docs
-│   ├── Architecture.md
-│   └── images                 Sanitized Windows runtime demonstrations
-│
-├── installer
-│   └── windows                Complete investigation coordinator
-│                              Focused investigation runners
-│                              Results and evidence rendering
-│                              Portable-result generation
-│                              Windows packaging resources
-│
-├── scripts
-│   ├── Run-AXIOS.ps1
-│   ├── Run-AXIOS-Layer.ps1
-│   ├── Windows release builder
-│   └── Source and package validation tooling
-│
-├── src
-│   ├── main.rs                Primary axios-core executable
-│   ├── lib.rs                 Shared library and internal modules
-│   │
-│   ├── bin                    Standalone investigation executables
-│   │   ├── Process and application investigation
-│   │   ├── Network exposure and service review
-│   │   ├── File and artifact investigation
-│   │   ├── Boot and Code Integrity review
-│   │   ├── Kernel and driver trust review
-│   │   ├── Defender and security-control review
-│   │   ├── Identity and access review
-│   │   ├── Platform-hardening review
-│   │   ├── Collection-integrity review
-│   │   ├── Cross-source observation review
-│   │   ├── Investigation-state construction
-│   │   ├── Reasoning and correlation
-│   │   └── Response-plan generation
-│   │
-│   ├── analysis               Normalization, classification, risk and priority,
-│   │                          event correlation, contradiction detection,
-│   │                          evidence chains, bounded reasoning
-│   ├── persistence            Run keys, startup folders, scheduled tasks,
-│   │                          services, drivers, extended mechanisms
-│   ├── processes              Live collection, path normalization,
-│   │                          parent/child links, token and integrity context,
-│   │                          trust analysis
-│   ├── network                Adapters, DNS and routing, TCP/UDP activity,
-│   │                          listeners, service correlation, firewall context,
-│   │                          explicit bounded target checks
-│   ├── security               Native Authenticode, access control, Defender,
-│   │                          security controls, Code Integrity,
-│   │                          trust-state normalization
-│   ├── system                 Hardware trust, firmware, TPM and Secure Boot,
-│   │                          BitLocker and VBS, kernel posture, driver trust,
-│   │                          runtime resources, memory execution,
-│   │                          browser extensions, software inventory, health
-│   ├── telemetry              Event Log evidence, security-event correlation,
-│   │                          timelines, runtime measurements
-│   ├── storage                JSON reports, snapshots, portable results,
-│   │                          manifests, SHA-256 integrity records
-│   ├── runtime                Bounded scheduling, worker coordination,
-│   │                          limits, performance measurements
-│   └── watchers               File-policy evaluation, evidence routing,
-│                              bounded file-watcher primitives
-│
-└── tests
-    ├── Command-interface contracts
-    ├── Privilege-boundary contracts
-    ├── Evidence-precision contracts
-    ├── Result-rendering contracts
-    ├── Privacy and source-hygiene contracts
-    ├── Windows-compatibility contracts
-    ├── Package-integrity contracts
-    ├── Runtime-parser contracts
-    └── Complete-investigation contracts
-```
-
----
-
-## Layer by layer
-
-### 1. Public interface
-
-```text
-axios.ps1
-    ├── Help
-    ├── User
-    ├── Administrator
-    ├── System
-    ├── Network
-    ├── Persistence
-    ├── Software
-    └── Results
-```
-
-`axios.ps1` is the stable public entrypoint. It accepts the mode, validates parameters, verifies the execution context, and forwards the request to the internal runner. Operators never need to call individual Rust executables.
-
-**Why it matters:** internal collectors can evolve without breaking the public command interface.
-
----
-
-### 2. Windows orchestration
-
-```text
-axios.ps1 → scripts/Run-AXIOS.ps1 → scripts/Run-AXIOS-Layer.ps1 → installer/windows runners
-```
-
-This layer connects the public command to the native components. It handles:
-
-- Parameter and mode routing
-- Privilege validation
-- Package preflight checks
-- Session initialization
-- Working-directory management
-- Native executable invocation
-- Exit-code validation
-- Report collection
-- Human-readable output
-- Session result retention
-
-> It never decides that a system is compromised. It coordinates collectors and preserves their results.
-
----
-
-### 3. Native collection
-
-```text
-Windows APIs and system sources → Rust collectors → Structured reports
-```
-
-Compiled Rust components collect evidence directly from Windows-native sources:
-
-| Category | Evidence |
+| Repository path | Responsibility |
 |---|---|
-| Execution | Processes and executable paths, memory-execution indicators |
-| Persistence | Services, scheduled tasks, registry persistence |
-| Kernel | Drivers and kernel state |
-| Network | Adapters, active endpoints, firewall configuration |
-| Defenses | Security controls, Defender evidence |
-| Telemetry | Event logs |
-| Inventory | Software inventory |
-| Platform | Boot and firmware state |
-| Files | Metadata and hashes |
-| Trust | Native signature-verification results, access-control information |
+| `installer/windows/axios.cmd` | CMD wrapper; starts PowerShell and enables the per-user result cache |
+| `installer/windows/axios.ps1` | Public PowerShell parameter interface |
+| `installer/windows/Run-AXIOS.ps1` | Mode routing, preflight, session handling |
+| `installer/windows/Run-AXIOS-Layer.ps1` | Focused investigation and Results handling |
+| `installer/windows/Run-AXIOS-Complete-Investigation.ps1` | Complete Administrator investigation |
+| `installer/windows/Invoke-AXIOS-Mission.ps1` | Mission orchestration |
+| `installer/windows/Write-AXIOS-Terminal-Results.ps1` | Human-readable terminal output |
+| `src/`, `src/bin/` | Shared Rust code, standalone collectors and analyzers |
+| `tests/` | Interface, evidence, privacy, runtime, and package contracts |
+| `scripts/build-windows-complete-investigation.sh` | Windows build and single-file CMD packaging |
+| `README.md`, `Commands.md`, `Windows.md`, `Architecture.md` | Documentation |
 
-Each collector owns **one bounded area** and returns its own status, observations, findings, errors, and visibility limitations.
+**Build:** the release builder cross-compiles the Windows executables, assembles the package, writes `SHA256SUMS.txt`, checks the archive, and embeds it in `axios-windows-investigation.cmd`.
+
+**Extracted package** (`Downloads\AXIOS\axios-windows-investigation`):
+
+```text
+axios.cmd, axios.ps1      public entry points
+scripts\                  PowerShell runners
+bin\                      native executables
+(docs) + manifest         documentation and integrity manifest
+```
+
+The GitHub-generated source ZIP does **not** contain the packaged executables.
 
 ---
 
-### 4. Evidence normalization
+## 1. Public interface
 
 ```text
-Raw collector output → Schema and status validation → Normalized evidence
+Release CMD        → extraction only
+Extracted axios.cmd → PowerShell process → axios.ps1
+Direct axios.ps1   → same parameter interface
 ```
 
-Windows doesn't return the same data format across versions, languages, privilege levels, or configurations. Normalization makes evidence comparable. It handles:
+The extractor shows progress and returns without starting an investigation. After extraction, operators pick a mode explicitly:
 
-- Missing optional fields
-- Localized Windows output
-- Legacy Windows fallbacks
-- Path normalization
-- Status normalization
-- Duplicate observations
-- Structured collection errors
-- Partial visibility
-- Unsupported capabilities
+- **Main assessments:** `User`, `Network`, `Administrator`
+- **Also available:** `System`, `Persistence`, `Software`, `Help`, `Results`
+- **Developer (separate, explicit):** exposure and credential commands. Credential data is never part of normal results.
 
-> **Hard rule:** normalization never invents a value when the source didn't provide one.
+Mode-specific options are validated before dispatch: a User focus belongs to `User`, targets and ports to `Network`, file-audit options to `Administrator`. Operators never launch individual Rust executables.
 
----
-
-### 5. Trust and integrity review
+## 2. Windows orchestration
 
 ```text
-Normalized evidence
-    ├── Native signature verification
-    ├── Package-integrity verification
-    ├── Access-control inspection
-    ├── Collection-status verification
-    └── Contradiction detection
-              │
-              ▼
-      Trusted evidence set
+axios.ps1 → Run-AXIOS.ps1 → focused layer runner OR complete investigation runner → PowerShell + Rust components
 ```
 
-Before correlation, AXIOS checks whether the evidence is structurally valid and whether the investigation package itself is complete. It looks for:
+It handles mode and parameter routing, privilege and package preflight, working-directory and session management, native executable invocation and exit-code checks, report collection and coverage tracking, terminal rendering, and result retention.
 
-- Missing required reports
-- Failed collectors
-- Partial reports
-- Modified or missing package files
-- Invalid evidence references
-- Contradictory collector results
-- Duplicate evidence
-- Unavailable trust states
-- Unsupported security claims
+Only `Administrator` requires elevation. Standard-user modes can run while a protected source stays unavailable, and orchestration **must report that gap**: permission to start a mode is not proof every collector succeeded.
 
-> An unavailable signature result is **not** converted into a trusted result. A missing report is **not** converted into an empty successful report.
+**Result retention**
 
----
-
-### 6. Cross-layer correlation
-
-```text
-Files ────────────┐
-Processes ────────┤
-Persistence ──────┤
-Network ──────────┤
-Memory ───────────┼──▶ Correlation graph
-Drivers ──────────┤
-Boot integrity ───┤
-Security controls ┤
-Identity ─────────┤
-Events ───────────┘
-```
-
-Correlation links related evidence **without destroying its provenance**.
-
-```text
-Executable file
-    ├── Started by a persistence mechanism
-    ├── Running as a live process
-    ├── Listening on a network endpoint
-    ├── Located in a user-writable directory
-    └── Missing a verified trust result
-```
-
-Any one of these may be only context. Together, they can justify higher-priority review.
-
-Correlation also **reduces noise**: something that first looks unusual can be reclassified when independent evidence shows it belongs to a trusted Windows or application context.
-
----
-
-### 7. Reasoning Web
-
-```text
-Verified facts
-     │
-     ▼
-Evidence relationships
-     ├── Supporting facts
-     ├── Contradictions
-     ├── Alternative explanations
-     └── Unresolved facts
-                │
-                ▼
-      Bounded hypotheses
-                │
-                ▼
-     Next-best verification steps
-```
-
-The Reasoning Web models the investigation as **connected facts**, not a flat list of alerts. Each branch looks like this:
-
-```text
-Observation
-    │
-    ▼
-Candidate explanation
-    ├── Supporting evidence
-    ├── Conflicting evidence
-    ├── Missing verification
-    └── Confidence calculation
-```
-
-It can build several competing branches, but it can never claim more confidence than the evidence supports.
-
-**Its rules**
-
-1. Context does not equal compromise.
-2. Repeated copies of the same observation are not independent support.
-3. Missing evidence cannot support a positive conclusion.
-4. Contradictions stay visible.
-5. Independent evidence increases confidence.
-6. Unsupported branches remain unresolved.
-7. Confirmed-malware language requires stronger evidence than a configuration weakness or review item.
-
----
-
-### 8. Response planning
-
-```text
-Supported findings + Unresolved evidence + Collection limitations
-                         │
-                         ▼
-               Prioritized response plan
-```
-
-Turns results into ordered analyst actions:
-
-- High-priority verification
-- Medium-priority review
-- Configuration review
-- Evidence-preservation guidance
-- Additional collection recommendations
-- Explicitly unresolved items
-
-> The plan is **advisory**. It never changes the system.
-
----
-
-### 9. Results and evidence preservation
-
-```text
-Collector reports
-    ├── Console summary
-    ├── Portable result
-    ├── Evidence manifest
-    ├── Performance summary
-    └── Saved investigation artifacts
-```
-
-The console renderer shows what a human needs while hiding internal temporary paths and machine receipts. Structured reports preserve:
-
-- Evidence provenance
-- Collector status
-- Findings and context observations
-- Errors and visibility limitations
-- Correlation references
-- Reasoning conclusions
-- Response-plan items
-- Performance measurements
-- Integrity metadata
-
----
-
-## End-to-end flow
-
-| Step | Stage | What happens |
-|---:|---|---|
-| 1 | Request validation | Mode, parameters, execution context, target format, and package components are validated |
-| 2 | Evidence collection | Rust collectors gather bounded evidence from Windows APIs and local sources |
-| 3 | Status preservation | Each component records complete, partial, failed, unavailable, or not requested |
-| 4 | Normalization | Values are normalized without hiding missing fields, localization differences, or access limits |
-| 5 | Integrity review | Report structure, package integrity, references, duplicates, and contradictions are checked |
-| 6 | Correlation | Related facts from independent sources are linked, keeping original references |
-| 7 | Reasoning | Competing explanations, unresolved facts, and confidence are evaluated |
-| 8 | Planning | Findings and gaps become prioritized analyst steps |
-| 9 | Presentation | A concise console assessment, plus structured artifacts when requested |
-
----
-
-## Architectural guarantees
-
-| Guarantee | Meaning |
+| Entry point | Behavior |
 |---|---|
-| Evidence provenance | Findings retain the sources that produced them |
-| Failure visibility | Collector failures remain visible |
-| Partial-state honesty | Limited collection is never presented as complete |
-| Bounded execution | Collection operates under explicit limits |
-| Privilege separation | Modes enforce their required execution context |
-| Non-destructive behavior | Investigation never remediates the system |
-| Correlation discipline | Context is not automatically promoted to a threat |
-| Contradiction preservation | Conflicting evidence stays available for review |
-| Package integrity | Required release components are verified |
-| Stable public interface | Internals can evolve without breaking primary commands |
+| `axios.cmd` | Per-user cache; `Results` works across CMD invocations |
+| Direct `axios.ps1` (unsaved) | Current PowerShell session only |
+| `-Save` | Retains requested artifacts |
+
+## 3. Native collection
+
+| Area | Examples |
+|---|---|
+| Execution | Processes, paths, runtime and memory indicators |
+| Persistence | Registry entries, services, tasks, startup locations |
+| Network | Adapters, DNS, routes, endpoints, listeners, firewall context |
+| Platform | Hardware, firmware, boot, Secure Boot |
+| Kernel | Driver and kernel trust evidence |
+| Defenses | Defender, security controls, Code Integrity |
+| Identity | Access and privilege surfaces |
+| Telemetry | Available Windows event evidence |
+| Files and software | Metadata, hashes, applications, update exposure |
+
+Each collector works within defined time, file, event, output, or evidence limits and returns observations and findings with status, errors, and visibility limits. **A denied source never produces an empty "clean" result.**
+
+## 4. Normalization
+
+Windows evidence differs across versions, languages, configurations, and privilege levels. Normalization makes comparable fields consistent while keeping their meaning. It handles optional fields, paths, legacy interfaces, localized output, duplicate observations, structured errors, and partial coverage.
+
+> **Normalization cannot manufacture a value the source did not provide.** Missing stays missing; unavailable stays unavailable.
+
+## 5. Integrity and trust review
+
+Before higher-level analysis, AXIOS checks whether reports and the package meet their contracts:
+
+- Required package components and manifest entries
+- Missing, failed, or partial collector reports
+- Report structure and evidence references
+- Duplicate observations and contradictory results
+- Signature, access-control, or trust states, when available
+- Claims that exceed their evidence
+
+The manifest confirms extracted components match recorded hashes. That is an **integrity check, not proof of safety**. An unknown signature never becomes a verified one, and a missing report never becomes a success with zero findings.
+
+## 6. Cross-source correlation
+
+Correlation connects evidence about the same file, process, service, persistence entry, endpoint, or activity, keeping references to the original collectors.
+
+*Example:* an executable linked to a startup entry, a running process, and a listening endpoint. A writable path or unavailable trust result adds context but proves nothing alone. Independent evidence can justify higher-priority review, and trustworthy context can reduce noise.
+
+Copies of one observation are not independent support. Contradictions stay visible instead of being resolved in favor of a convenient conclusion.
+
+## 7. Reasoning Web
+
+```text
+Observation → candidate explanation → supporting and conflicting evidence
+            → missing verification → bounded confidence and next steps
+```
+
+It retains competing explanations and unresolved facts, and follows six rules:
+
+1. Context is not confirmed compromise.
+2. Duplicates do not increase independent support.
+3. Missing evidence cannot support a positive claim.
+4. Conflicts must remain visible.
+5. Confidence cannot exceed the quality of its evidence.
+6. Strong threat language needs stronger support than a configuration weakness or review item.
+
+## 8. Response planning
+
+Supported findings, unresolved questions, and collection gaps become an ordered plan for a human investigator: urgent verification, configuration review, evidence preservation, or additional collection.
+
+> **The plan is advisory.** Public AXIOS commands never kill processes, delete artifacts, quarantine files, or change Windows security settings.
+
+## 9. Results and preservation
+
+The terminal renderer shows a useful summary and coverage without exposing unnecessary internal paths or machine receipts. Structured results keep:
+
+- Collector status, errors, and visibility limits
+- Findings, review items, and context observations
+- Evidence provenance and correlation references
+- Contradictions and unresolved facts
+- Reasoning and response-plan items
+- Performance and integrity metadata
+
+Saving is explicit (`-Save`). Reports can contain sensitive machine data, so sanitize before sharing. The developer credential view stays outside normal User, Network, and Administrator result files.
 
 ---
 
-## Design rules for contributors
+## End-to-end contract
 
-If you change any layer, you must keep these true:
+| # | Step | Required behavior |
+|:-:|---|---|
+| 1 | Validate | Check mode, options, privilege, target format, package prerequisites |
+| 2 | Collect | Gather bounded evidence from available Windows sources |
+| 3 | Preserve status | Record complete, partial, failed, or unavailable work truthfully |
+| 4 | Normalize | Align fields without concealing missing data |
+| 5 | Review | Check integrity, references, duplicates, trust, contradictions |
+| 6 | Correlate | Link related observations and keep provenance |
+| 7 | Reason | Evaluate explanations, confidence, conflicts, gaps |
+| 8 | Plan | Prioritize human verification and further collection |
+| 9 | Present | Show findings alongside coverage and supporting evidence |
 
-1. Don't repair, hide, or overstate uncertainty that an earlier layer produced.
-2. Don't invent values the source didn't provide.
-3. Don't turn a failed or missing result into a clean one.
-4. Don't count duplicate observations as independent evidence.
-5. Don't present context as confirmed compromise.
-6. Keep provenance attached to every finding.
+## Design rules
+
+A change to any layer must preserve these contracts:
+
+- ❌ Never turn failed, denied, missing, or limited collection into clean evidence.
+- ❌ Never invent a source value or count duplicates as independent support.
+- ✅ Keep the collector and evidence references behind every finding.
+- ✅ Keep contradictions and uncertainty visible through the final result.
+- ✅ Bound expensive collection and report when a limit is reached.
+- ✅ Separate observations, verified findings, and advisory actions.
+- ✅ Preserve non-destructive public investigation behavior.
+- ✅ Validate changes at the relevant interface, and on Windows when native behavior changes.
 
 ---
+
+See [Commands.md](Commands.md) for the public interface, [Windows.md](Windows.md) for privileges and visibility, and [Contributing.md](Contributing.md) for validation requirements.

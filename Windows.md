@@ -1,244 +1,138 @@
 # Windows Requirements and Privileges
 
-AXIOS is a Windows-focused security investigation platform. It collects and evaluates Windows security evidence through PowerShell orchestration and packaged native Rust components.
+Setup, privileges, visibility, and common runtime problems for AXIOS on Windows. For every mode and parameter, see [Commands.md](Commands.md).
 
-This document explains **what you need to run AXIOS**, **which commands need elevation**, and **how privilege level changes what AXIOS can see**.
-
-> **More privilege can increase visibility, but it never justifies overstating evidence.**
-
----
-
-## Contents
-
-- [At a glance](#at-a-glance)
-- [Requirements](#requirements)
-- [Extracting the release package](#extracting-the-release-package)
-- [PowerShell requirements](#powershell-requirements)
-- [Privilege model](#privilege-model)
-- [Command privilege matrix](#command-privilege-matrix)
-- [Standard-user visibility](#standard-user-visibility)
-- [Administrator visibility](#administrator-visibility)
-- [Collection status and access limits](#collection-status-and-access-limits)
-- [Compatibility](#compatibility)
-- [Recommended starting points](#recommended-starting-points)
-- [Troubleshooting](#troubleshooting)
-
----
+> **More privilege can increase visibility. It never makes incomplete evidence complete.**
 
 ## At a glance
 
 | Question | Answer |
 |---|---|
-| Do I need to install anything? | No. Run the release CMD to extract the package, then use `axios.cmd` |
-| Which commands need Administrator? | Only `Administrator` (the full 42-stage investigation) |
-| Can I run everything else as a standard user? | Yes, with some protected evidence reported as unavailable |
-| Does Administrator guarantee full visibility? | No. Windows protections and security products can still limit it |
-| Is inaccessible evidence treated as clean? | Never |
+| Installation required? | No. Extract the release CMD into Downloads, then run `axios.cmd`. |
+| Administrator required? | Only for `Administrator` mode and options that explicitly say so. |
+| Works as a standard user? | Yes. Protected evidence is reported as unavailable. |
+| Elevation guarantees full visibility? | No. Windows protections, missing APIs, and collection limits still apply. |
 
 ---
 
-## Requirements
+## Setup
 
-To run AXIOS you need:
+**You need:** Windows with Windows PowerShell, permission to investigate the device, and the [v2026.11.23 CMD asset](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23). The GitHub source ZIP does **not** contain the packaged executables.
 
-- A Windows system
-- Windows PowerShell
-- The official `axios-windows-investigation.cmd` release asset
-- Permission to investigate the system
-- Administrator PowerShell, **only** for the complete Administrator investigation
-
-AXIOS needs no permanent installation. The release CMD extracts the package into Downloads; run `axios.cmd` from that folder afterward.
-
----
-
-## Extracting the release package
-
-Download the CMD asset from the [v2026.11.23 release](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) into Downloads. Compare its SHA-256 with the value on the release page, then run:
+Save `axios-windows-investigation.cmd` in Downloads, then in a **standard PowerShell window**:
 
 ```powershell
-Get-FileHash "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd" -Algorithm SHA256
-& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+$File = "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
+$Expected = '796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7'
+if ((Get-FileHash $File -Algorithm SHA256).Hash -ne $Expected) {
+    throw 'AXIOS download checksum mismatch'
+}
+& $File
 Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 .\axios.cmd -Mode Help
 ```
 
-Expected package directory (example):
-
-```text
-C:\Users\TestUser\Downloads\AXIOS\axios-windows-investigation
-```
-
-The CMD shows extraction progress and does not start a scan. AXIOS validates required package components before dependent investigations. If validation reports a missing file, extract the official CMD package again into a clean directory.
+- The CMD shows extraction progress and returns **without starting an investigation**.
+- The extracted folder holds `axios.cmd` (CMD or PowerShell) and `axios.ps1` (PowerShell). Keep it intact.
+- In later sessions, go straight to that folder; no need to extract again.
+- The checksum only compares your download with the published digest. It does not prove the program is safe.
 
 ---
 
-## PowerShell requirements
+## Privileges and visibility
 
-The `axios.cmd` interface works in CMD and PowerShell. For example:
+Running a command and collecting every source are different things. A standard user can run most modes, but Windows may deny access to protected processes, firewall rules, system locations, or security configuration. AXIOS reports that limit instead of treating missing evidence as clean.
 
-```powershell
-.\axios.cmd -Mode Help
-```
-
-The `axios.ps1` interface also remains available in PowerShell. Keep the same terminal open for session results. If a device's security policy blocks a component, record the limitation; do not disable protections.
-
----
-
-## Privilege model
-
-AXIOS separates two different things:
-
-| Concept | Meaning |
-|---|---|
-| **Privilege to start a mode** | Whether the command is allowed to run in your current PowerShell |
-| **Visibility of each collector** | What each collector can actually see with your token |
-
-A command can start fine as a standard user while some protected Windows evidence stays unavailable. AXIOS keeps that distinction visible in its output and never treats inaccessible evidence as proof that a protected area is clean.
-
----
-
-## Command privilege matrix
-
-| Command | Standard user | Administrator | Purpose |
+| Mode | Standard | Elevated | Purpose |
 |---|:---:|:---:|---|
-| `Help` | ✅ | ✅ | Show supported commands and parameters |
-| `User` | ✅ | ✅ | Evidence available to the current user token |
-| `System` | ✅ | ✅ | Available system and security posture |
-| `Network` | ✅ | ✅ | Available network-security evidence |
-| `Persistence` | ✅ | ✅ | Persistence evidence available in the current context |
-| `Software` | ✅ | ✅ | Software and update evidence |
-| `Results` | ✅ | ✅ | Latest completed session assessment |
+| `Help` | ✅ | ✅ | Commands and parameters |
+| `User` | ✅ | ✅ | Evidence available to the current token |
+| `System` | ✅ | ✅ | System and security posture |
+| `Network` | ✅ | ✅ | Network state and exposure |
+| `Persistence` | ✅ | ✅ | Accessible persistence evidence |
+| `Software` | ✅ | ✅ | Inventory and updates |
+| `Results` | ✅ | ✅ | Latest available assessment |
 | `DeveloperExposure` | ✅ | ✅ | Advanced exposure assessment |
-| `DeveloperCredential` | ✅ | ✅ | Active Wi-Fi credential evidence |
-| `DeveloperArchive` | ✅ | ✅ | Decrypt a compatible AXIOS credential archive |
+| `DeveloperCredential` | ✅ | ✅ | Wi-Fi credential view or archive decryption |
+| `DeveloperArchive` | ✅ | ✅ | Legacy archive decryption |
 | `Administrator` | ❌ | ✅ | Complete 42-stage investigation |
 
-> The full investigation **must** run from an elevated PowerShell window.
+Some Network options need elevation even though plain `Network` mode doesn't; check [Commands.md](Commands.md) for the option you choose. Credential data appears only via an explicit developer command. Never share its output or encrypted archive publicly.
+
+### What elevation adds
+
+`Administrator` mode runs 42 bounded stages and can reach more system-wide persistence, processes, services, security controls, event evidence, drivers, and boot posture. Protected processes, endpoint products, missing APIs, and collection limits can still reduce coverage.
 
 ---
 
-## Standard-user visibility
+## Running an investigation
 
-Standard-user mode is intentional and useful. It can review:
+**Standard user** (from the extracted folder):
 
-- User-visible processes
-- User startup locations
-- Accessible services and tasks
-- Accessible network configuration
-- Available software evidence
-- User-level execution surfaces
-- Accessible permissions
-- Context and exposure evidence
-
-A standard user may not be able to inspect all protected system locations, firewall rules, protected processes, or system-wide security configuration. When access is restricted, AXIOS reports the limitation explicitly:
-
-```text
-firewall_rules: not_attempted; administrator_required
+```powershell
+.\axios.cmd -Mode User
+.\axios.cmd -Mode Network
+.\axios.cmd -Mode Results
 ```
 
----
+**Narrower system review, no elevation:**
 
-## Administrator visibility
+```powershell
+.\axios.cmd -Mode User -Focus SystemQuick
+```
 
-Open PowerShell with **Run as Administrator**, then:
+**Complete investigation:** open **PowerShell as Administrator**, then:
 
 ```powershell
 Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
-.\axios.ps1 -Mode Administrator
+.\axios.cmd -Mode Administrator
+.\axios.cmd -Mode Results
 ```
-
-Administrator mode coordinates the complete 42-stage investigation. Elevation can expand visibility into:
-
-| Area | Examples |
-|---|---|
-| **Persistence** | System-wide persistence |
-| **Configuration** | Protected security configuration, firewall-rule evidence |
-| **Kernel and boot** | Kernel and driver posture, boot and Code Integrity evidence |
-| **Runtime** | System-wide process and service context |
-| **Telemetry** | Event and telemetry evidence |
-| **Platform** | Hardware and firmware trust |
-| **Identity** | Identity and access surfaces |
-| **Analysis** | Cross-source correlation and final response planning |
-
-> Administrator access does **not** guarantee complete evidence. Windows protections, protected processes, endpoint-security products, unavailable APIs, and bounded collection limits can still reduce visibility.
 
 ---
 
-## Collection status and access limits
+## Reading collection status
 
 | Status | Meaning |
 |---|---|
-| `complete` | Bounded collection finished without a reported gap |
-| `partial` | Useful evidence collected, but visibility was limited |
-| `failed` | No valid result produced |
-| `not_attempted` | Not requested, or prerequisites unavailable |
-| `unknown` | Evidence can't support a truthful state |
+| `complete` | Bounded collection finished with no reported gap |
+| `partial` | Useful evidence, but visibility was limited |
+| `failed` | No valid result |
+| `not_attempted` | Not requested, or a prerequisite was unavailable |
+| `unknown` | Evidence can't support a truthful status |
 
-A `partial` status can come from:
+Example: firewall-rule evidence may show `not_attempted` with `administrator_required`. A `partial` report can come from denied access, a protected resource, an unavailable capability, or a time, file, or evidence limit. Read the visibility limitations and collection errors **before** interpreting findings.
 
-- Standard-user access restrictions
-- Administrator privileges being required
-- Protected Windows resources
-- Endpoint-security interference
-- Unavailable Windows capabilities
-- A bounded time, file, event, or evidence limit
-
-A completed AXIOS command means the selected bounded workflow finished. It does not mean every possible artifact on the system was visible.
+A completed command means its bounded workflow finished. It does **not** mean every artifact was visible, or that the system is clean.
 
 ---
 
-## Compatibility
+## Results and saved evidence
 
-AXIOS is Windows-focused. Evidence availability depends on:
-
-- Windows version and edition
-- System configuration and enabled features
-- Privilege level
-- Security products
-- Available Windows APIs
-
-Where practical, AXIOS includes fallbacks for supported Windows interfaces. When a capability is unavailable, the report preserves that state instead of inventing a clean result.
-
-> Before relying on a specific collector in an operational workflow, validate it on the intended Windows environment.
-
----
-
-## Recommended starting points
-
-| Goal | Commands |
-|---|---|
-| **Standard user** | `.\axios.ps1 -Mode User` then `.\axios.ps1 -Mode Results` |
-| **Administrator** | `.\axios.ps1 -Mode Administrator` then `.\axios.ps1 -Mode Results` |
-| **Network** | `.\axios.ps1 -Mode Network -NetworkFocus full` then `.\axios.ps1 -Mode Results` |
-| **System** | `.\axios.ps1 -Mode System` then `.\axios.ps1 -Mode Results` |
-
----
-
-## Troubleshooting
-
-**Administrator mode is rejected**
-Open a new PowerShell window with **Run as Administrator**, return to the AXIOS folder, and run the command again.
-
-**Package-integrity validation fails**
-Run the official CMD again into a clean directory. Never run AXIOS from an incomplete extraction.
-
-**A report is partial**
-Read the displayed visibility limitations and collection errors. A partial result is an honest description of incomplete coverage, not automatically a software failure.
-
-**Results can't find an assessment**
-Run `Results` in the same PowerShell session as the assessment (use `-Save` to retain artifacts):
+- `axios.cmd` caches the latest result per user across CMD sessions and deletes entries older than one day.
+- `axios.ps1` keeps unsaved evidence in the current PowerShell session only; run `Results` in that same session.
+- Running another assessment changes what `Results` opens.
+- Add `-Save` to keep and compare evidence. Saved reports can contain sensitive machine data.
 
 ```powershell
-.\axios.ps1 -Mode User
-.\axios.ps1 -Mode Results
+.\axios.cmd -Mode User -Save
+.\axios.cmd -Mode Results
 ```
 
 ---
 
-## Principle
+## Compatibility and troubleshooting
 
-> More privilege can increase visibility, but it never justifies overstating evidence.
+Evidence varies by Windows version, edition, configuration, privilege level, security products, and available APIs. Validate a collector on the environment where you intend to rely on it. Unavailable capabilities stay visible as limitations.
 
-AXIOS reports what it could collect, what it could not collect, and why.
+| Problem | What to check |
+|---|---|
+| `Administrator` rejected | Open an elevated PowerShell and run it from the extracted folder. |
+| Package validation fails | Compare the CMD hash, then extract the official package again into a clean folder. |
+| Report is `partial` | Read its limits and collection errors. Partial is not automatically a software failure. |
+| `Results` finds nothing | Run an assessment first. Use the same session for `axios.ps1`, or the `axios.cmd` cache. |
+| Code Integrity or policy blocks a component | Record the exact error and component. **Do not disable Windows protections** to force execution. |
 
 ---
+
+Use AXIOS only on systems you own or are authorized to investigate. Read [SECURITY.md](SECURITY.md) before sharing a vulnerability or investigation evidence.
