@@ -1,0 +1,105 @@
+name: Windows CMD build and provenance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/windows-release-build.yml
+      - scripts/build-windows-complete-investigation.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build final CMD on Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER: x86_64-w64-mingw32-gcc
+      AXIOS_OUTPUT_DIR: ${{ github.workspace }}/dist
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install Windows GNU toolchain and packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mingw-w64 binutils file zip unzip
+          rustup target add x86_64-pc-windows-gnu
+      - name: Build self-extracting CMD
+        run: bash scripts/build-windows-complete-investigation.sh
+      - name: Check output and write SHA-256
+        run: |
+          test -s dist/axios-windows-investigation.cmd
+          (cd dist && sha256sum axios-windows-investigation.cmd > axios-windows-investigation.cmd.sha256)
+          (cd dist && sha256sum --check axios-windows-investigation.cmd.sha256)
+      - name: Upload exact CMD and checksum
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: axios-windows-investigation-candidate
+          path: |
+            dist/axios-windows-investigation.cmd
+            dist/axios-windows-investigation.cmd.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+
+  windows-smoke:
+    name: Extract CMD and run Help on Windows
+    needs: build
+    runs-on: windows-2022
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Download built CMD
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: axios-windows-investigation-candidate
+          path: ${{ runner.temp }}/axios-candidate
+      - name: Verify checksum and extracted interface
+        shell: powershell
+        run: |
+          $folder = Join-Path $env:RUNNER_TEMP 'axios-candidate'
+          $cmd = Join-Path $folder 'axios-windows-investigation.cmd'
+          $expected = ((Get-Content (Join-Path $folder 'axios-windows-investigation.cmd.sha256') -Raw) -split '\s+')[0]
+          if ((Get-FileHash $cmd -Algorithm SHA256).Hash -ne $expected) { throw 'CMD checksum mismatch' }
+          & $cmd
+          if ($LASTEXITCODE -ne 0) { throw "CMD extraction failed: $LASTEXITCODE" }
+          $package = Join-Path $folder 'AXIOS\axios-windows-investigation'
+          if (-not (Test-Path (Join-Path $package 'SHA256SUMS.txt'))) { throw 'Missing package manifest' }
+          if (@(Get-ChildItem (Join-Path $package 'bin') -Filter '*.exe').Count -ne 46) { throw 'Expected 46 executables' }
+          Push-Location $package
+          try {
+            & .\axios.cmd -Mode Help
+            if ($LASTEXITCODE -ne 0) { throw "Help failed: $LASTEXITCODE" }
+          }
+          finally { Pop-Location }
+
+  attest:
+    name: Attest tested final CMD
+    if: github.event_name == 'workflow_dispatch'
+    needs: [build, windows-smoke]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Download tested CMD
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: axios-windows-investigation-candidate
+          path: dist
+      - name: Verify downloaded artifact
+        run: cd dist && sha256sum --check axios-windows-investigation.cmd.sha256
+      - name: Attest exact CMD bytes
+        uses: actions/attest@c32b4b8b198b65d0bd9d63490e847ff7b53989d4 # v4.0.0
+        with:
+          subject-path: dist/axios-windows-investigation.cmd
