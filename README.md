@@ -58,31 +58,25 @@ Rust collects and correlates Windows evidence, verifies integrity, and structure
 
 ## Quick start
 
-Download the [v2026.11.23 CMD asset](https://github.com/Adam-dods/axios-windows-investigation/releases/download/v2026.11.23/axios-windows-investigation.cmd) to Downloads. Its published SHA-256 is:
-
-```text
-796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7
-```
-
-The release also provides a [checksum file](https://github.com/Adam-dods/axios-windows-investigation/releases/download/v2026.11.23/axios-windows-investigation.cmd.sha256). In a standard PowerShell window:
+Download [`axios-windows-investigation.cmd` from v2026.11.23](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) into Downloads. To verify the file first, see [Verify the download](#verify-the-download). In a standard PowerShell window:
 
 ```powershell
-$Expected = '796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7'
-$Actual = (Get-FileHash "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd" -Algorithm SHA256).Hash
-if ($Actual -ne $Expected) { throw 'AXIOS download checksum mismatch' }
-& "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
-Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
-.\axios.cmd -Mode Help
+cd ~/Downloads
+.\axios-windows-investigation.cmd
+cd .\AXIOS\axios-windows-investigation
 .\axios.cmd -Mode User
-.\axios.cmd -Mode Network
-.\axios.cmd -Mode Results
 ```
 
-The file extracts into `Downloads\AXIOS` with inline progress and returns to the terminal without starting an investigation. Run `.\axios.cmd -Mode Administrator` in an **elevated** terminal for the full investigation. `axios.ps1` remains available in PowerShell.
+The CMD extracts the package once; `-Mode User` then shows its assessment directly in the terminal. For another assessment, choose one command from [Commands.md](Commands.md). `-Mode Results` is optional for reopening the latest assessment. Administrator mode requires an elevated terminal. The GitHub source ZIP does not contain the packaged executables.
 
-> The release asset is a single self-extracting CMD file, **not** the source archive GitHub generates beside it. Downloading the source ZIP alone does not provide the 46 packaged executables. Keep the extracted directory intact so AXIOS can validate its required components.
+### Verify the download
 
-## Documentation
+```powershell
+(Get-FileHash "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd" -Algorithm SHA256).Hash
+```
+
+Expected SHA-256: `796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7`. Compare it before running the CMD. The [release checksum file](https://github.com/Adam-dods/axios-windows-investigation/releases/download/v2026.11.23/axios-windows-investigation.cmd.sha256) is also available. A matching checksum confirms that the download matches the published digest; it does not prove the program is safe.
+
 
 | Document | Contents |
 |---|---|
