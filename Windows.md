@@ -17,25 +17,24 @@ Setup, privileges, visibility, and common runtime problems for AXIOS on Windows.
 
 ## Setup
 
-**You need:** Windows with Windows PowerShell, permission to investigate the device, and the [v2026.11.23 CMD asset](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23). The GitHub source ZIP does **not** contain the packaged executables.
-
-Save `axios-windows-investigation.cmd` in Downloads, then in a **standard PowerShell window**:
+Download the [v2026.11.23 CMD asset](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) into Downloads. The GitHub source ZIP does not contain the packaged executables. To verify the file first, see [Verify the download](#verify-the-download). In a standard PowerShell window:
 
 ```powershell
-$File = "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
-$Expected = '796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7'
-if ((Get-FileHash $File -Algorithm SHA256).Hash -ne $Expected) {
-    throw 'AXIOS download checksum mismatch'
-}
-& $File
-Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
-.\axios.cmd -Mode Help
+cd ~/Downloads
+.\axios-windows-investigation.cmd
+cd .\AXIOS\axios-windows-investigation
+.\axios.cmd -Mode User
 ```
 
-- The CMD shows extraction progress and returns **without starting an investigation**.
-- The extracted folder holds `axios.cmd` (CMD or PowerShell) and `axios.ps1` (PowerShell). Keep it intact.
-- In later sessions, go straight to that folder; no need to extract again.
-- The checksum only compares your download with the published digest. It does not prove the program is safe.
+The CMD extracts once without starting an investigation. `-Mode User` then displays its result directly in the terminal. The extracted folder contains `axios.cmd` and `axios.ps1`; keep it intact. For later sessions, enter the extracted folder and run the mode you want.
+
+### Verify the download
+
+```powershell
+(Get-FileHash "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd" -Algorithm SHA256).Hash
+```
+
+Expected SHA-256: `796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7`. Compare it before running the CMD. The [release checksum file](https://github.com/Adam-dods/axios-windows-investigation/releases/download/v2026.11.23/axios-windows-investigation.cmd.sha256) is also available. A matching checksum confirms that the download matches the published digest; it does not prove the program is safe.
 
 ---
 
@@ -71,8 +70,12 @@ Some Network options need elevation even though plain `Network` mode doesn't; ch
 
 ```powershell
 .\axios.cmd -Mode User
+```
+
+**Network instead:**
+
+```powershell
 .\axios.cmd -Mode Network
-.\axios.cmd -Mode Results
 ```
 
 **Narrower system review, no elevation:**
@@ -86,7 +89,6 @@ Some Network options need elevation even though plain `Network` mode doesn't; ch
 ```powershell
 Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
 .\axios.cmd -Mode Administrator
-.\axios.cmd -Mode Results
 ```
 
 ---

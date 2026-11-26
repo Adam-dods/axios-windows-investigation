@@ -8,31 +8,26 @@ Run the investigation from one extracted package: **pick a mode → add a focus 
 
 ## Setup
 
-**You need**
-
-- Windows with Windows PowerShell, and permission to investigate the device (or the explicit network target).
-- The [v2026.11.23 CMD asset](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23), not the source ZIP (the ZIP has no executables).
-- An **elevated** terminal only for `Administrator` mode.
-
-No installation is needed. The CMD extracts the package; afterwards use `axios.cmd` (CMD or PowerShell) or `axios.ps1` (PowerShell, same parameters).
-
-**Extract once**
-
-Save `axios-windows-investigation.cmd` in Downloads, then in a standard PowerShell window:
+Download the [v2026.11.23 CMD asset](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) into Downloads (not GitHub's source ZIP). To verify it first, see [Verify the download](#verify-the-download). With Windows PowerShell and permission to investigate the device, extract it once and run a mode:
 
 ```powershell
-$File = "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd"
-$Expected = '796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7'
-if ((Get-FileHash $File -Algorithm SHA256).Hash -ne $Expected) { throw 'AXIOS download checksum mismatch' }
-& $File
-Set-Location "$env:USERPROFILE\Downloads\AXIOS\axios-windows-investigation"
-.\axios.cmd -Mode Help
+cd ~/Downloads
+.\axios-windows-investigation.cmd
+cd .\AXIOS\axios-windows-investigation
+.\axios.cmd -Mode User
 ```
 
-Extraction shows progress and returns to the terminal **without starting an investigation**. In later sessions, skip the extractor and just `Set-Location` into the folder (in CMD: `cd %USERPROFILE%\Downloads\AXIOS\axios-windows-investigation`).
+The CMD only extracts; the chosen mode displays its result directly in the terminal. Later, enter `~/Downloads/AXIOS/axios-windows-investigation` and run the mode you need. `axios.cmd` works in PowerShell and CMD; `axios.ps1` is also available in PowerShell. Only Administrator mode requires elevation.
 
-> All commands below assume the extracted folder is your current directory.
-> The checksum checks that the download matches the published digest; it does not prove that the code is safe. Review or build from source if you need stronger assurance.
+### Verify the download
+
+```powershell
+(Get-FileHash "$env:USERPROFILE\Downloads\axios-windows-investigation.cmd" -Algorithm SHA256).Hash
+```
+
+Expected SHA-256: `796bfdc914bfc29d06fa1ea335d87b89ed53011dcc5939f7636ce9b0bee7c1a7`. Compare it before running the CMD. The [release checksum file](https://github.com/Adam-dods/axios-windows-investigation/releases/download/v2026.11.23/axios-windows-investigation.cmd.sha256) is also available. A matching checksum confirms that the download matches the published digest; it does not prove the program is safe.
+
+> All commands below assume the extracted package is your current directory.
 
 ---
 
