@@ -315,14 +315,14 @@ Mode-specific parameters are rejected with unrelated modes:
 
 | Goal | Commands (from the extracted folder) |
 |---|---|
-| Standard user | `.\axios.cmd -Mode User` → `.\axios.cmd -Mode Results` |
-| Network | `.\axios.cmd -Mode Network -NetworkFocus full` → `Results` |
-| System | `.\axios.cmd -Mode User -Focus SystemQuick` → `Results` |
-| Persistence | `.\axios.cmd -Mode User -Focus Persistence` → `Results` |
-| Administrator | *(elevated)* `.\axios.cmd -Mode Administrator` → `Results` |
+| Standard user | `.\axios.cmd -Mode User` |
+| Network | `.\axios.cmd -Mode Network -NetworkFocus full` |
+| System | `.\axios.cmd -Mode User -Focus SystemQuick` |
+| Persistence | `.\axios.cmd -Mode User -Focus Persistence` |
+| Administrator | *(elevated)* `.\axios.cmd -Mode Administrator` |
 
 ```text
 Select a mode → optional focus → run → review coverage → save only if needed.
 ```
 
-You never need to run the 46 native components yourself.
+Each assessment displays its result immediately. Run `.\axios.cmd -Mode Results` only to reopen the latest assessment. You never need to run the 46 native components yourself.
