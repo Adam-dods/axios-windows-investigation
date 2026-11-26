@@ -76,8 +76,13 @@ jobs:
           if (@(Get-ChildItem (Join-Path $package 'bin') -Filter '*.exe').Count -ne 46) { throw 'Expected 46 executables' }
           Push-Location $package
           try {
-            & .\axios.cmd -Mode Help
+            $helpText = (& .\axios.cmd -Mode Help) -join [Environment]::NewLine
             if ($LASTEXITCODE -ne 0) { throw "Help failed: $LASTEXITCODE" }
+            if ([string]::IsNullOrWhiteSpace($helpText)) { throw 'Help returned empty output' }
+            Write-Output $helpText
+            foreach ($mode in 'User', 'Network', 'Administrator', 'Results') {
+              if ($helpText -notmatch "-Mode\s+$mode\b") { throw "Help is missing the $mode mode" }
+            }
           }
           finally { Pop-Location }
 
