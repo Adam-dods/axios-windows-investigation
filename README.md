@@ -348,6 +348,16 @@ Build directories, investigation results, credentials, dumps, packet captures, k
 
 AXIOS uses calendar releases. The current stable [v2026.11.23](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.11.23) was published 23 November 2026 for Windows as `axios-windows-investigation.cmd` plus a `.sha256` file. Rust package metadata still reads `2026.9.27`; the GitHub tag identifies this distribution. The [first stable release](https://github.com/Adam-dods/axios-windows-investigation/releases/tag/v2026.9.27) was published 1 October 2026.
 
+### GitHub-built candidate provenance
+
+The [manual Windows CMD workflow](https://github.com/Adam-dods/axios-windows-investigation/actions/workflows/windows-release-build.yml) builds a separate candidate, checks its SHA-256, extracts it and runs `Help` on a Windows runner, then attests the exact CMD. After downloading and extracting a successful run's artifact, verify that candidate with:
+
+```powershell
+gh attestation verify .\axios-windows-investigation.cmd --repo Adam-dods/axios-windows-investigation
+```
+
+This attestation describes a GitHub-built candidate; it does **not** apply to stable `v2026.11.23`, prove safety, or replace testing the investigation modes on a real Windows machine.
+
 ## Security
 
 If Code Integrity blocks an unsigned component, report the limit instead of disabling protections. Please do not report suspected vulnerabilities in a public issue. Follow the private process in [SECURITY.md](SECURITY.md).
