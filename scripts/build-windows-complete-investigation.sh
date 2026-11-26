@@ -54,7 +54,7 @@ NAMES=(
   axios-developer-credential-view
 )
 
-for command in cargo file sha256sum zip unzip mktemp base64 sed; do
+for command in cargo file sha256sum zip unzip mktemp base64 sed grep strings; do
   command -v "$command" >/dev/null ||
     { echo "AXIOS_RELEASE_BUILD_ERROR=missing_command:$command"; exit 1; }
 done
@@ -67,6 +67,7 @@ export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$HOME=/build --remap-path-p
 
 for name in "${NAMES[@]}"; do
   cargo build --manifest-path "$PROJECT_ROOT/Cargo.toml" \
+    --locked \
     --release \
     --target "$TARGET" \
     --bin "$name"
@@ -89,7 +90,7 @@ mkdir -p "$BIN" "$ROOT/scripts" "$ROOT/output"
 for name in "${NAMES[@]}"; do
   source_file="$PROJECT_ROOT/target/$TARGET/release/$name.exe"
 
-  if ! file "$source_file" | grep -qiE 'PE32.*Windows.*x86-64'; then
+  if ! file "$source_file" | grep -qiE 'PE32.*(Windows.*x86-64|x86-64.*Windows)'; then
     file "$source_file"
     echo "AXIOS_RELEASE_BUILD_ERROR=invalid_windows_pe:$name"
     exit 1
@@ -145,7 +146,7 @@ cp "$PROJECT_ROOT/Changelog.md" "$ROOT/Changelog.md"
 cp "$PROJECT_ROOT/LICENSE" "$ROOT/LICENSE"
 
 UNIX_HOME_PREFIX="/""home/"
-if /usr/bin/strings -a "$BIN"/*.exe | grep -qE "${UNIX_HOME_PREFIX}|/Users/|DESKTOP-"; then
+if strings -a "$BIN"/*.exe | grep -qE "${UNIX_HOME_PREFIX}|/Users/|DESKTOP-"; then
   echo "AXIOS_RELEASE_BUILD_ERROR=local_build_path_detected"
   exit 1
 fi
